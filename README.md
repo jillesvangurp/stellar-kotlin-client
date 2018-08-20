@@ -34,6 +34,12 @@ assert(server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmoun
 
 You can find release jars on [jitpack](https://jitpack.io/#Inbot/inbot-stellar-kotlin-wrapper). Tagged releases will show up there.
 
+To build, you need docker and docker-compose installed. The gradle build uses a plugin to spin up the included docker-compose for the standalone network.
+
+```
+gradle build
+```
+
 # License
 
 [MIT License](LICENSE)
