@@ -19,7 +19,12 @@ private val logger = KotlinLogging.logger {}
  * @param networkPassphrase if using a standalone chain, provide the password here. This enables you to use the root account for account creation.
  * @param minimumBalance minimumBalance for accounts. Currently 20.0 on standalone chaines but cheaper in the public network.
  */
-class KotlinStellarWrapper(val server: Server, val networkPassphrase: String? = "Standalone Network ; February 2017", val minimumBalance: Double = 20.0) {
+class KotlinStellarWrapper(
+    val server: Server,
+    val networkPassphrase: String? = "Standalone Network ; February 2017",
+    val minimumBalance: Double = 20.0,
+    val maxRetries: Int = 10
+) {
     /**
      * the keypair associated with the root account; only available if you have a passphrase
      */
@@ -37,14 +42,16 @@ class KotlinStellarWrapper(val server: Server, val networkPassphrase: String? = 
     /**
      * Create a new account and return the keyPair.
      * @param opening balance. Needs to be >= the minimum balance for your network.
+     * @param memo optional string memo
+     * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
      */
-    fun createNewAccount(amountLumen: Double, memo: String? = null): KeyPair {
+    fun createNewAccount(amountLumen: Double, memo: String? = null, maxTries: Int = maxRetries): KeyPair {
         if (amountLumen < minimumBalance) {
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
         val newKeyPair = KeyPair.random()
 
-        server.doTransaction(rootKeyPair) {
+        server.doTransaction(rootKeyPair, maxTries = maxTries) {
             addOperation(CreateAccountOperation.Builder(newKeyPair, amountLumen.toString()).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
@@ -58,10 +65,16 @@ class KotlinStellarWrapper(val server: Server, val networkPassphrase: String? = 
      * @param receiver account that trusts the asset
      * @param asset the asset
      * @param maxTrustedAmount maximum amount to which you trust the asset
+     * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
      * @return transaction response
      */
-    fun trustAsset(receiver: KeyPair, asset: Asset, maxTrustedAmount: Double): SubmitTransactionResponse {
-        return server.doTransaction(receiver) {
+    fun trustAsset(
+        receiver: KeyPair,
+        asset: Asset,
+        maxTrustedAmount: Double,
+        maxTries: Int = maxRetries
+    ): SubmitTransactionResponse {
+        return server.doTransaction(receiver, maxTries = maxTries) {
             addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.toString()).build())
         }
     }
@@ -73,9 +86,18 @@ class KotlinStellarWrapper(val server: Server, val networkPassphrase: String? = 
      * @param receiver receiver account
      * @param amount amount to be sent
      * @param memo optinoal text memo
+     * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
      * @return transaction response
-     */ fun pay(asset: Asset, sender: KeyPair, receiver: KeyPair, amount: Double, memo: String? = null): SubmitTransactionResponse {
-        return server.doTransaction(sender) {
+     */
+    fun pay(
+        asset: Asset,
+        sender: KeyPair,
+        receiver: KeyPair,
+        amount: Double,
+        memo: String? = null,
+        maxTries: Int = maxRetries
+    ): SubmitTransactionResponse {
+        return server.doTransaction(sender, maxTries = maxTries) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))

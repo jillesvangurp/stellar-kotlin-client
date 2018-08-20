@@ -1,10 +1,13 @@
 package io.inbot.ethclient.stellar
 
-import assertk.assert
-import assertk.assertions.isEqualTo
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.balanceAmount
 import io.inbot.kotlinstellar.balanceFor
+import io.kotlintest.matchers.string.contain
+import io.kotlintest.should
+import io.kotlintest.shouldBe
+import io.kotlintest.shouldThrow
+import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.awaitAll
 import kotlinx.coroutines.experimental.delay
@@ -38,7 +41,7 @@ class StellarTest {
 
         val secondPair = KeyPair.fromSecretSeed(secretSeed)
 
-        assert(pair.accountId).isEqualTo(secondPair.accountId)
+        pair.accountId shouldBe secondPair.accountId
     }
 
     @Test
@@ -49,7 +52,7 @@ class StellarTest {
 
         try {
             val newAccount = server.accounts().account(newKeyPair)
-            assert(newAccount.balances[0].balance).equals("${amountLumen}000000")
+            newAccount.balances[0].balance shouldBe "${amountLumen}000000"
         } catch (e: ErrorResponse) {
             logger.info("${e.code} ${e.body}")
             throw e
@@ -68,7 +71,7 @@ class StellarTest {
 
         wrapper.pay(bpAss, brownyPointIssuer, anotherAccount, 2.0)
 
-        assert(server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount()).isEqualTo(2.0)
+        server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount() shouldBe 2.0
     }
 
     @Test
@@ -85,22 +88,27 @@ class StellarTest {
             wrapper.trustAsset(it, bpAss, 1000.0)
             wrapper.pay(bpAss, brownyPointIssuer, it, 100.0)
         }
-        logger.info("after")
+
+        // bp holders can pay each other without further need for trustlines
+        wrapper.pay(bpAss, pairs[0], pairs[1], 10.0)
+        val anotherAccount = wrapper.createNewAccount(100.0)
+
+        shouldThrow<IllegalStateException> {
+            wrapper.pay(bpAss, pairs[2], anotherAccount, 10.0)
+        }.message should (contain("op_no_trust"))
     }
 
     @Test
-    fun `coroutines test`() {
-        logger.info("in the beginning")
+    fun `concurrent transaction should retry`() {
         runBlocking {
-            awaitAll(async {
-                delay(30L)
-                logger.info("1")
-            },
-                async {
-                    delay(30L)
-                    logger.info("2")
+            val tasks = mutableListOf<Deferred<KeyPair>>()
+            for(i in 0..2) {
+                tasks.add(async {
+                    wrapper.createNewAccount(20.0,maxTries = 20)
                 })
+            }
+            val all = awaitAll(*tasks.toTypedArray())
+            all.size shouldBe 3
         }
-        logger.info("last")
     }
 }

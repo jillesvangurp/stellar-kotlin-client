@@ -73,7 +73,7 @@ fun Transaction.Builder.buildAndSign(pair: KeyPair): Transaction {
  */
 fun Server.doTransaction(
     keyPair: KeyPair,
-    maxTries: Int = 3,
+    maxTries: Int,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     try {
@@ -103,8 +103,9 @@ private fun Server.doTransactionInternal(
     } else {
         val errorCode = response.extras.resultCodes?.transactionResultCode
         if (errorCode == "tx_bad_seq" && tries < maxTries) {
-            // escalate how long it sleeps in between depending on the number of tries and randomize
-            Thread.sleep(RandomUtils.nextLong(100, 1000*tries.toLong() + 1))
+            // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
+            // using increments of 1s because stellar transactions are relatively slow
+            Thread.sleep(RandomUtils.nextLong(100, 1000*(tries.toLong() + 1)))
             return doTransactionInternal(tries + 1, maxTries, keyPair, transactionBlock)
         } else {
             val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
