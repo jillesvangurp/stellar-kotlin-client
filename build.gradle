@@ -133,9 +133,9 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.24.0'    
     compile "io.github.microutils:kotlin-logging:1.5.8"
+    // FIXME switch to official release once our PR for shading is included
     implementation 'com.github.Inbot:java-stellar-sdk:0.3.2-inbot-shaded-3'
-
-
+    
     compile "org.apache.commons:commons-lang3:3.7"
 
     // bring your own logging, but we need some in tests
