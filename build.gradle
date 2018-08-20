@@ -1,0 +1,153 @@
+buildscript {
+    ext {
+        kotlinVersion = '1.2.60'
+        junitVersion = '5.2.0'
+        jacksonVersion = '2.9.6'
+    }
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:0.9.17"
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.8.3"
+        classpath 'com.github.ben-manes:gradle-versions-plugin:0.20.0' // gradle dependencyUpdates -Drevision=release
+        classpath "de.thetaphi:forbiddenapis:2.5"
+        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.14.0'
+    }
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'docker-compose'
+apply plugin: 'project-report' // useful for gradle htmlDependencyReport
+apply plugin: 'com.diffplug.gradle.spotless'
+apply plugin: "de.thetaphi.forbiddenapis"
+apply plugin: 'com.github.ben-manes.versions'
+
+forbiddenApis {
+    // https://github.com/policeman-tools/forbidden-apis/wiki/GradleUsage
+    bundledSignatures = ["jdk-unsafe-9", "jdk-deprecated-9", "jdk-non-portable", "jdk-internal-9"]
+    // take out "jdk-system-out"
+    signaturesFiles = files("forbidden_signatures.txt")
+    ignoreFailures = false
+}
+
+// this intentionally breaks the build if you mess up the formatting; pro tip: use Save Actions plugin in intellij and auto format and organize imports on save
+spotless {
+    java {
+        removeUnusedImports() // removes any unused imports
+    }
+    // to fix violations: gradle spotlessApply
+    // in intellij also tweak kotlin imports to require 999 imports before wildcards and remove java.util for always using wildcards
+    // do the same for java imports
+    // wildcards are verboten!
+    // currentlyb breaks offline build due to fucked up transitive dependency on ktlint & kotlin
+    kotlin {
+        // optionally takes a version
+        ktlint()
+    }
+}
+
+afterEvaluate {
+    // apply it on every build, this will create diffs but is preferable to breaking CI builds over minor formatting
+    tasks.getByName('spotlessCheck').dependsOn(tasks.getByName('spotlessApply'))
+}
+
+kotlin {
+    experimental {
+        // neeed for kotlin test
+        coroutines 'enable'
+    }
+}
+
+dokka {
+    outputFormat = 'html'
+    jdkVersion = 8
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        // for whatever reason defaults to 1.6. But since we don't care about android ...
+        jvmTarget = "1.8"
+    }
+}
+
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+    test.java.srcDirs += 'src/test/kotlin'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        // Make sure output from
+        // standard out or error is shown
+        // in Gradle output.
+        exceptionFormat = 'full'
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
+}
+
+dockerCompose.isRequiredBy(test)
+
+dockerCompose {
+    buildAdditionalArgs = ['--force-rm']
+    forceRecreate = true
+}
+
+group = 'io.inbot.kotlinstellar'
+version = '1.0-SNAPSHOT'
+sourceCompatibility = 1.8
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+    }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        // for whatever reason defaults to 1.6. But since we don't care about android ...
+        jvmTarget = "1.8"
+        // zero tolerance on warnings
+        allWarningsAsErrors = true
+        freeCompilerArgs = ["-Xjsr305=strict"]
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.24.0'    
+    compile "io.github.microutils:kotlin-logging:1.5.8"
+    implementation 'com.github.Inbot:java-stellar-sdk:0.3.2-inbot-shaded-3'
+
+
+    compile "org.apache.commons:commons-lang3:3.7"
+
+    // bring your own logging, but we need some in tests
+    testCompile "org.slf4j:slf4j-api:1.7.25"
+    testCompile "org.slf4j:jcl-over-slf4j:1.7.25"
+    testCompile "org.slf4j:log4j-over-slf4j:1.7.25"
+    testCompile "org.slf4j:jul-to-slf4j:1.7.25"
+    testCompile "ch.qos.logback:logback-classic:1.2.3"
+
+    testCompile "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testCompile "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+
+    testCompile "io.mockk:mockk:1.8.5"
+    testCompile 'com.willowtreeapps.assertk:assertk:0.10'
+}

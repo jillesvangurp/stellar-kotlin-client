@@ -1,0 +1,8 @@
+version: "2.3"
+services:
+  stellar:
+#    docker run --rm --name stellarstandalone -p "8000:8000"  stellar/quickstart --standalone
+    image: stellar/quickstart
+    ports:
+      - 8000:8000
+    command: "--standalone"
