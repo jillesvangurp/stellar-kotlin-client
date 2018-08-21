@@ -24,7 +24,7 @@ private val logger = KotlinLogging.logger {}
 class KotlinStellarWrapper(
     val server: Server,
     val networkPassphrase: String? = "Standalone Network ; February 2017",
-    val minimumBalance: TokenAmount = TokenAmount(20,0),
+    val minimumBalance: TokenAmount = TokenAmount.of(20,0),
     val defaultMaxTries: Int = 10
 ) {
     /**

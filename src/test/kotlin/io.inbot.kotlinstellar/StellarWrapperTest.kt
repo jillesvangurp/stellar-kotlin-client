@@ -30,7 +30,7 @@ val sourcePair=KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQK
 val issuerPair=KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
 val distributionPair=KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
 val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
-val tokenCap = TokenAmount(LongMath.pow(10,10),0)
+val tokenCap = TokenAmount.of(LongMath.pow(10,10),0)
 
 class StellarWrapperTest {
     lateinit var server: Server
@@ -48,12 +48,12 @@ class StellarWrapperTest {
         if (server.findAccount(sourcePair) == null) {
             logger.info("bootstrapping brownie point token")
             // we need enough tokens in the source account that we can create the other accounts
-            wrapper.createAccount(amountLumen = TokenAmount(1000,0), newAccount = sourcePair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(1000,0), newAccount = sourcePair)
             // use the minimum amount because we'll lock this account down after issueing
             // + 1 because the transfer will drop us below the minimum amount
             // TODO figure out the absolute minimums in stroops here
-            wrapper.createAccount(amountLumen = TokenAmount(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
-            wrapper.createAccount(amountLumen = TokenAmount(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
             wrapper.trustAsset(distributionPair, bpAss, tokenCap)
             // issue the tokens
             wrapper.pay(bpAss, issuerPair, distributionPair,tokenCap)
@@ -78,7 +78,7 @@ class StellarWrapperTest {
     @Test
     fun `use standalone root to create a new account`() {
         // this is the minimum on the standalone network; should be lower on the public stellars
-        val amountLumen = TokenAmount(20,0)
+        val amountLumen = TokenAmount.of(20,0)
         val newKeyPair = wrapper.createAccount(amountLumen)
 
         try {
