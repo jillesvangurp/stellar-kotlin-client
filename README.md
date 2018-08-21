@@ -8,27 +8,35 @@ The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some K
 
 # Examples
 
-Create a custom asset with a trust line and do a payment.
+Create a custom asset with a trust line as per the [walkthrough](https://www.stellar.org/developers/guides/walkthroughs/custom-assets.html).
 
 ```kotlin
 val server = Server("http://localhost:8000")
 // create the wrapper
 val wrapper = KotlinStellarWrapper(server)
 
+val sourcePair=KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
+val issuerPair=KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
+val distributionPair=KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
+
+val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
+val tokenCap = TokenAmount.of(LongMath.pow(10,10),0)
+
 // use standalone network password to figure out the root account and create an account
-val brownyPointIssuer = wrapper.createNewAccount(100.0, "issuer")
-val bpAss = Asset.createNonNativeAsset("BrownyPoints", brownyPointIssuer)
+wrapper.createAccount(amountLumen = TokenAmount.of(1000,0), newAccount = sourcePair)
+// use the minimum amount because we'll lock this account down after issueing
+// + 1 because the transfer will drop us below the minimum amount
+// TODO figure out the absolute minimums in stroops here
+wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
+wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
+wrapper.trustAsset(distributionPair, bpAss, tokenCap)
+// issue the tokens
+wrapper.pay(bpAss, issuerPair, distributionPair,tokenCap)
 
-val anotherAccount = wrapper.createNewAccount(100.0, "receiver")
-
-// create a trustline to the asset
-wrapper.trustAsset(anotherAccount, bpAss, 100.0)
-
-// transfer a small amount
-wrapper.pay(bpAss, brownyPointIssuer, anotherAccount, 2.0)
-
-// use extension functions added to account and balance to assert
-assert(server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount()).isEqualTo(2.0)
+wrapper.setHomeDomain(issuerPair,"browniepoints.com")
+// prevent the issuer from ever issueing more tokens
+val proofTheIssuerCanIssueNoMore = wrapper.lockoutAccount(issuerPair)
+logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
 
 ```
 
