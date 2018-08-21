@@ -1,6 +1,8 @@
 package io.inbot.ethclient.stellar
 
+import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
+import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.balanceAmount
 import io.inbot.kotlinstellar.balanceFor
 import io.inbot.kotlinstellar.findAccount
@@ -28,7 +30,7 @@ val sourcePair=KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQK
 val issuerPair=KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
 val distributionPair=KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
 val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
-val tokenCap = Math.pow(10.0, 10.0)
+val tokenCap = TokenAmount(LongMath.pow(10,10),0)
 
 class StellarWrapperTest {
     lateinit var server: Server
@@ -40,15 +42,18 @@ class StellarWrapperTest {
         wrapper = KotlinStellarWrapper(server)
     }
 
-    fun ensureBrownyPointCoinIssued() {
+    fun givenIssuedBroniePoints() {
         // this stuff is slow so do it only once per test run
         // based on https://www.stellar.org/developers/guides/walkthroughs/custom-assets.html
         if (server.findAccount(sourcePair) == null) {
             logger.info("bootstrapping brownie point token")
             // we need enough tokens in the source account that we can create the other accounts
-            wrapper.createAccount(amountLumen = 1000.0, newAccount = sourcePair)
-            wrapper.createAccount(amountLumen = 100.0, sourceAccount = sourcePair, newAccount = issuerPair)
-            wrapper.createAccount(amountLumen = 100.0, sourceAccount = sourcePair, newAccount = distributionPair)
+            wrapper.createAccount(amountLumen = TokenAmount(1000,0), newAccount = sourcePair)
+            // use the minimum amount because we'll lock this account down after issueing
+            // + 1 because the transfer will drop us below the minimum amount
+            // TODO figure out the absolute minimums in stroops here
+            wrapper.createAccount(amountLumen = TokenAmount(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
+            wrapper.createAccount(amountLumen = TokenAmount(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
             wrapper.trustAsset(distributionPair, bpAss, tokenCap)
             // issue the tokens
             wrapper.pay(bpAss, issuerPair, distributionPair,tokenCap)
@@ -73,12 +78,12 @@ class StellarWrapperTest {
     @Test
     fun `use standalone root to create a new account`() {
         // this is the minimum on the standalone network; should be lower on the public stellars
-        val amountLumen = 20.0
+        val amountLumen = TokenAmount(20,0)
         val newKeyPair = wrapper.createAccount(amountLumen)
 
         try {
             val newAccount = server.accounts().account(newKeyPair)
-            newAccount.balances[0].balance shouldBe "${amountLumen}000000"
+            newAccount.balances[0].balanceAmount() shouldBe amountLumen
         } catch (e: ErrorResponse) {
             logger.info("${e.code} ${e.body}")
             throw e
@@ -87,36 +92,36 @@ class StellarWrapperTest {
 
     @Test
     fun `distribute brownie points to a new account`() {
-        ensureBrownyPointCoinIssued()
+        givenIssuedBroniePoints()
 
         // need larger opening balance for creating trust
-        val anotherAccount = wrapper.createAccount(100.0, "receiver")
+        val anotherAccount = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
 
-        wrapper.trustAsset(anotherAccount, bpAss, 100.0)
-        wrapper.pay(bpAss, distributionPair, anotherAccount, 2.0)
+        wrapper.trustAsset(anotherAccount, bpAss, TokenAmount.of(100.0))
+        wrapper.pay(bpAss, distributionPair, anotherAccount, TokenAmount.of(2.0))
         server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount() shouldBe 2.0
     }
 
     @Test
     fun `trading with and without trust lines`() {
-        ensureBrownyPointCoinIssued()
+        givenIssuedBroniePoints()
 
-        val a1 = wrapper.createAccount(100.0, "receiver")
+        val a1 = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
         wrapper.trustAsset(a1, bpAss, tokenCap)
 
-        val a2 = wrapper.createAccount(100.0, "receiver")
+        val a2 = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
         wrapper.trustAsset(a2, bpAss, tokenCap)
 
 
         // bp holders can pay each other without further need for trustlines
-        wrapper.pay(bpAss, distributionPair,a1,100.0)
-        wrapper.pay(bpAss, a1,a2,100.0)
+        wrapper.pay(bpAss, distributionPair,a1,TokenAmount.of(100.0))
+        wrapper.pay(bpAss, a1,a2,TokenAmount.of(100.0))
 
 
-        val a3NoTrust = wrapper.createAccount(100.0)
+        val a3NoTrust = wrapper.createAccount(TokenAmount.of(100.0))
 
         shouldThrow<IllegalStateException> {
-            wrapper.pay(bpAss, a2, a3NoTrust, 10.0)
+            wrapper.pay(bpAss, a2, a3NoTrust, TokenAmount.of(10.0))
         }.message should (contain("op_no_trust"))
     }
 
@@ -126,7 +131,7 @@ class StellarWrapperTest {
             val tasks = mutableListOf<Deferred<KeyPair>>()
             for(i in 0..2) {
                 tasks.add(async {
-                    wrapper.createAccount(20.0,maxTries = 20)
+                    wrapper.createAccount(TokenAmount.of(20.0),maxTries = 20)
                 })
             }
             val all = awaitAll(*tasks.toTypedArray())

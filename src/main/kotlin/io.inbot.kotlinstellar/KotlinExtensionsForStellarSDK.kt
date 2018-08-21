@@ -150,4 +150,6 @@ private fun Server.doTransactionInternal(
     }
 }
 
-fun AccountResponse.Balance.balanceAmount(): Double { return balance.toDouble() }
+fun AccountResponse.Balance.balanceAmount(): TokenAmount {
+    return TokenAmount.of(balance)
+}
