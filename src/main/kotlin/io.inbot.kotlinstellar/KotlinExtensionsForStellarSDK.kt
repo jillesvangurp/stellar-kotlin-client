@@ -2,6 +2,7 @@ package io.inbot.kotlinstellar
 
 import mu.KotlinLogging
 import org.apache.commons.lang3.RandomUtils
+import org.apache.commons.lang3.Validate
 import org.stellar.sdk.Asset
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
@@ -59,9 +60,41 @@ fun AccountResponse.balanceFor(asset: Asset): AccountResponse.Balance? {
  * Combine building and signing into a single call.
  */
 fun Transaction.Builder.buildAndSign(pair: KeyPair): Transaction {
+    pair.validateCanSign()
     val tx = build()
     tx.sign(pair)
     return tx
+}
+
+fun Server.findAccount(pair: KeyPair): AccountResponse? {
+    try {
+        return accounts().account(pair)
+    } catch (e: ErrorResponse) {
+        if(e.code == 404) {
+            return null
+        } else {
+            throw e
+        }
+    }
+}
+
+fun KeyPair.seedString(): String {
+    validateCanSign()
+    return secretSeed.joinToString("")
+}
+
+fun KeyPair.toPublicPair(): KeyPair {
+    return if(canSign()) {
+        KeyPair.fromPublicKey(publicKey)
+    } else {
+        this
+    }
+}
+
+fun KeyPair.validateCanSign() {
+    if (!canSign()) {
+        throw IllegalArgumentException("Pair has no private key")
+    }
 }
 
 /**
@@ -91,6 +124,8 @@ private fun Server.doTransactionInternal(
     keyPair: KeyPair,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
+    keyPair.validateCanSign()
+    Validate.isTrue(maxTries>=0,"maxTries should be positive")
     val builder = Transaction.Builder(accounts().account(keyPair))
     transactionBlock.invoke(builder)
     val transaction = builder.buildAndSign(keyPair)
