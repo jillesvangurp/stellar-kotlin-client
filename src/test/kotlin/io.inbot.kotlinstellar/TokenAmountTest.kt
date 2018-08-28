@@ -53,5 +53,4 @@ class TokenAmountTest {
         TokenAmount.of("1.0000002").toString() shouldBe "1.0000002"
         TokenAmount.of("1").toString() shouldBe "1.0000000"
     }
-
 }

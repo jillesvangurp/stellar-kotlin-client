@@ -2,6 +2,7 @@ package io.inbot.kotlinstellar
 
 import com.google.common.math.LongMath
 import org.apache.commons.lang3.StringUtils
+import java.util.Locale
 
 private val stroopsPerToken = LongMath.pow(10, 7)
 private val maxTokens = Long.MAX_VALUE / stroopsPerToken
@@ -26,7 +27,7 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long) 
     }
 
     override fun toString(): String {
-        return "${tokens}.${"%07d".format(stroops)}"
+        return "$tokens.${"%07d".format(Locale.ROOT,stroops)}"
     }
 
     operator fun compareTo(other: TokenAmount): Int {
@@ -65,5 +66,4 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long) 
             )
         }
     }
-
 }

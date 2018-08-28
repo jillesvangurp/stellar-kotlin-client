@@ -24,7 +24,7 @@ private val logger = KotlinLogging.logger {}
 class KotlinStellarWrapper(
     val server: Server,
     val networkPassphrase: String? = "Standalone Network ; February 2017",
-    val minimumBalance: TokenAmount = TokenAmount.of(20,0),
+    val minimumBalance: TokenAmount = TokenAmount.of(20, 0),
     val defaultMaxTries: Int = 10
 ) {
     /**
@@ -50,7 +50,7 @@ class KotlinStellarWrapper(
      * @param newAccount account that will be created; defaults to a random key pair
      * @return the key pair of the created account
      */
-    fun createAccount(amountLumen: TokenAmount, memo: String? = null, sourceAccount: KeyPair?=null, newAccount: KeyPair = KeyPair.random(), maxTries: Int = defaultMaxTries): KeyPair {
+    fun createAccount(amountLumen: TokenAmount, memo: String? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: Int = defaultMaxTries): KeyPair {
         if (amountLumen < minimumBalance) {
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }

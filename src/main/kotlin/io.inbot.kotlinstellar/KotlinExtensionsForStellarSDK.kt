@@ -70,7 +70,7 @@ fun Server.findAccount(pair: KeyPair): AccountResponse? {
     try {
         return accounts().account(pair)
     } catch (e: ErrorResponse) {
-        if(e.code == 404) {
+        if (e.code == 404) {
             return null
         } else {
             throw e
@@ -84,7 +84,7 @@ fun KeyPair.seedString(): String {
 }
 
 fun KeyPair.toPublicPair(): KeyPair {
-    return if(canSign()) {
+    return if (canSign()) {
         KeyPair.fromPublicKey(publicKey)
     } else {
         this
@@ -125,7 +125,7 @@ private fun Server.doTransactionInternal(
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
-    Validate.isTrue(maxTries>=0,"maxTries should be positive")
+    Validate.isTrue(maxTries >= 0, "maxTries should be positive")
     val builder = Transaction.Builder(accounts().account(keyPair))
     transactionBlock.invoke(builder)
     val transaction = builder.buildAndSign(keyPair)

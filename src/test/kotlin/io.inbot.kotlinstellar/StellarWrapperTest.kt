@@ -26,11 +26,11 @@ import org.stellar.sdk.requests.ErrorResponse
 private val logger = KotlinLogging.logger { }
 
 // creating accounts is time consuming so try to reuse the same accounts and simply check if they exist before creating
-val sourcePair=KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
-val issuerPair=KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
-val distributionPair=KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
+val sourcePair = KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
+val issuerPair = KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
+val distributionPair = KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
 val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
-val tokenCap = TokenAmount.of(LongMath.pow(10,10),0)
+val tokenCap = TokenAmount.of(LongMath.pow(10, 10), 0)
 
 class StellarWrapperTest {
     lateinit var server: Server
@@ -48,17 +48,17 @@ class StellarWrapperTest {
         if (server.findAccount(sourcePair) == null) {
             logger.info("bootstrapping brownie point token")
             // we need enough tokens in the source account that we can create the other accounts
-            wrapper.createAccount(amountLumen = TokenAmount.of(1000,0), newAccount = sourcePair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), newAccount = sourcePair)
             // use the minimum amount because we'll lock this account down after issueing
             // + 1 because the transfer will drop us below the minimum amount
             // TODO figure out the absolute minimums in stroops here
-            wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
-            wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(100, 0), sourceAccount = sourcePair, newAccount = issuerPair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(100, 0), sourceAccount = sourcePair, newAccount = distributionPair)
             wrapper.trustAsset(distributionPair, bpAss, tokenCap)
             // issue the tokens
-            wrapper.pay(bpAss, issuerPair, distributionPair,tokenCap)
+            wrapper.pay(bpAss, issuerPair, distributionPair, tokenCap)
 
-            wrapper.setHomeDomain(issuerPair,"browniepoints.com")
+            wrapper.setHomeDomain(issuerPair, "browniepoints.com")
             // prevent the issuer from ever issueing more tokens
             val proofTheIssuerCanIssueNoMore = wrapper.lockoutAccount(issuerPair)
             logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
@@ -78,7 +78,7 @@ class StellarWrapperTest {
     @Test
     fun `use standalone root to create a new account`() {
         // this is the minimum on the standalone network; should be lower on the public stellars
-        val amountLumen = TokenAmount.of(20,0)
+        val amountLumen = TokenAmount.of(20, 0)
         val newKeyPair = wrapper.createAccount(amountLumen)
 
         try {
@@ -99,7 +99,7 @@ class StellarWrapperTest {
 
         wrapper.trustAsset(anotherAccount, bpAss, TokenAmount.of(100.0))
         wrapper.pay(bpAss, distributionPair, anotherAccount, TokenAmount.of(2.0))
-        server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount() shouldBe 2.0
+        server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount() shouldBe TokenAmount.of(2.0)
     }
 
     @Test
@@ -112,11 +112,9 @@ class StellarWrapperTest {
         val a2 = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
         wrapper.trustAsset(a2, bpAss, tokenCap)
 
-
         // bp holders can pay each other without further need for trustlines
-        wrapper.pay(bpAss, distributionPair,a1,TokenAmount.of(100.0))
-        wrapper.pay(bpAss, a1,a2,TokenAmount.of(100.0))
-
+        wrapper.pay(bpAss, distributionPair, a1, TokenAmount.of(100.0))
+        wrapper.pay(bpAss, a1, a2, TokenAmount.of(100.0))
 
         val a3NoTrust = wrapper.createAccount(TokenAmount.of(100.0))
 
@@ -129,13 +127,27 @@ class StellarWrapperTest {
     fun `concurrent transaction should retry`() {
         runBlocking {
             val tasks = mutableListOf<Deferred<KeyPair>>()
-            for(i in 0..2) {
+            for (i in 0..2) {
                 tasks.add(async {
-                    wrapper.createAccount(TokenAmount.of(20.0),maxTries = 20)
+                    wrapper.createAccount(TokenAmount.of(20.0), maxTries = 20)
                 })
             }
             val all = awaitAll(*tasks.toTypedArray())
             all.size shouldBe 3
         }
     }
+
+//    @Test
+//    fun forever() {
+//        val es = wrapper.listen {
+//            println("${it.id} ${it.type} ${it.transactionHash} ${it.createdAt} ${it.sourceAccount.accountId} ${it.pagingToken}")
+//        }
+////        es.open()
+//            println("should be listening")
+//        while (es.isOpen) {
+//            println("still alive")
+//            Thread.sleep(10000)
+//        }
+//        println("Dead as a doornail")
+//    }
 }
