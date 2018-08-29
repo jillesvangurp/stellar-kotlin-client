@@ -15,29 +15,32 @@ val server = Server("http://localhost:8000")
 // create the wrapper
 val wrapper = KotlinStellarWrapper(server)
 
-val sourcePair=KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
-val issuerPair=KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
-val distributionPair=KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
+val sourcePair = KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
+val issuerPair = KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
+val distributionPair = KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
+val bpt = Asset.createNonNativeAsset("bpt", issuerPair.toPublicPair())
+val native = AssetTypeNative()
 
-val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
-val tokenCap = TokenAmount.of(LongMath.pow(10,10),0)
-
-// use standalone network password to figure out the root account and create an account
-wrapper.createAccount(amountLumen = TokenAmount.of(1000,0), newAccount = sourcePair)
+logger.info("bootstrapping brownie point token")
+// we need enough tokens in the source account that we can create the other accounts
+wrapper.createAccount(amountLumen = TokenAmount.of(100000, 0), newAccount = sourcePair)
 // use the minimum amount because we'll lock this account down after issueing
 // + 1 because the transfer will drop us below the minimum amount
 // TODO figure out the absolute minimums in stroops here
-wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = issuerPair)
-wrapper.createAccount(amountLumen = TokenAmount.of(100,0), sourceAccount = sourcePair, newAccount = distributionPair)
-wrapper.trustAsset(distributionPair, bpAss, tokenCap)
+wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), sourceAccount = sourcePair, newAccount = issuerPair)
+wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), sourceAccount = sourcePair, newAccount = distributionPair)
+wrapper.trustAsset(distributionPair, bpt, tokenCap)
 // issue the tokens
-wrapper.pay(bpAss, issuerPair, distributionPair,tokenCap)
+wrapper.pay(bpt, issuerPair, distributionPair, tokenCap)
 
-wrapper.setHomeDomain(issuerPair,"browniepoints.com")
+wrapper.setHomeDomain(issuerPair, "browniepoints.com")
 // prevent the issuer from ever issueing more tokens
 val proofTheIssuerCanIssueNoMore = wrapper.lockoutAccount(issuerPair)
-logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
 
+proofTheIssuerCanIssueNoMore.getTransactionResult().result.results.forEach {
+    println("${it.tr.discriminant.name} ${it.tr.setOptionsResult.discriminant.name} ")
+}
+logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
 ```
 
 # Maven/gradle
