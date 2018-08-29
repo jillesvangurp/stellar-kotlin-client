@@ -4,7 +4,17 @@
 
 The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some Kotlin specific goodness. The intent is to get rid of a lot of boilerplate and make it easy to create accounts, work with a standalone container, and do transactions.
 
-**This is a work in progress.** APIs may change, refactoring may happen, etc. When this changes we'll remove this notice.
+**This is a work in progress.** APIs may change, refactoring may happen, etc. When this changes we'll remove this notice. Keeping the example  below is a bit of a PITA, so refer to the tests and API documentation (gradle dokka) for the current state.
+
+The plan is to keep on adding convenience methods. 
+
+**IMPORTANT** This currently depends on a fork of the java SDK that we created for a [pull request](https://github.com/stellar/java-stellar-sdk/pull/132). This shades the dependencies and updates some of them as well.
+
+# Features
+
+- make transaction submission and error handling easier. Our `doTransaction` extension function for the Server class in the sdk does retries on timeout and throws a runtime exceptions if the the result is not successful.
+- make dealing with assets, asset codes, and token amounts less painful. The SDK represents amounts as strings; Stellar represents amounts as Long values. So, 1 XLM (the 'native' token) is actually represented as 10^7 or 10M stroops. To make dealing with amounts and calculating rates correctly, we have added a `TokenAmount` data class. This does all the right things and comes with several factory methods so you can construct amounts from a String, a Double, or a pair of longs to represent tokens and stroops. We also add several extension methods to get instances of this class from relevant classes in the SDK
+- `KotlinStellarWrapper` provides simple functions to do common things like creating new accounts, adding trust lines, doing payments, or making offers.
 
 # Examples
 
