@@ -3,9 +3,11 @@ package io.inbot.ethclient.stellar
 import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.TokenAmount
+import io.inbot.kotlinstellar.amount
 import io.inbot.kotlinstellar.balanceAmount
 import io.inbot.kotlinstellar.balanceFor
 import io.inbot.kotlinstellar.findAccount
+import io.inbot.kotlinstellar.getTransactionResult
 import io.inbot.kotlinstellar.toPublicPair
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
@@ -19,6 +21,7 @@ import mu.KotlinLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.stellar.sdk.Asset
+import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
 import org.stellar.sdk.requests.ErrorResponse
@@ -29,7 +32,9 @@ private val logger = KotlinLogging.logger { }
 val sourcePair = KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
 val issuerPair = KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
 val distributionPair = KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
-val bpAss = Asset.createNonNativeAsset("BrownyPoint", issuerPair.toPublicPair())
+val bpt = Asset.createNonNativeAsset("bpt", issuerPair.toPublicPair())
+val native = AssetTypeNative()
+
 val tokenCap = TokenAmount.of(LongMath.pow(10, 10), 0)
 
 class StellarWrapperTest {
@@ -48,19 +53,23 @@ class StellarWrapperTest {
         if (server.findAccount(sourcePair) == null) {
             logger.info("bootstrapping brownie point token")
             // we need enough tokens in the source account that we can create the other accounts
-            wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), newAccount = sourcePair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(100000, 0), newAccount = sourcePair)
             // use the minimum amount because we'll lock this account down after issueing
             // + 1 because the transfer will drop us below the minimum amount
             // TODO figure out the absolute minimums in stroops here
-            wrapper.createAccount(amountLumen = TokenAmount.of(100, 0), sourceAccount = sourcePair, newAccount = issuerPair)
-            wrapper.createAccount(amountLumen = TokenAmount.of(100, 0), sourceAccount = sourcePair, newAccount = distributionPair)
-            wrapper.trustAsset(distributionPair, bpAss, tokenCap)
+            wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), sourceAccount = sourcePair, newAccount = issuerPair)
+            wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), sourceAccount = sourcePair, newAccount = distributionPair)
+            wrapper.trustAsset(distributionPair, bpt, tokenCap)
             // issue the tokens
-            wrapper.pay(bpAss, issuerPair, distributionPair, tokenCap)
+            wrapper.pay(bpt, issuerPair, distributionPair, tokenCap)
 
             wrapper.setHomeDomain(issuerPair, "browniepoints.com")
             // prevent the issuer from ever issueing more tokens
             val proofTheIssuerCanIssueNoMore = wrapper.lockoutAccount(issuerPair)
+
+            proofTheIssuerCanIssueNoMore.getTransactionResult().result.results.forEach {
+                println("${it.tr.discriminant.name} ${it.tr.setOptionsResult.discriminant.name} ")
+            }
             logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
         } else {
             // this means accounts above already exist on your test chain
@@ -97,30 +106,50 @@ class StellarWrapperTest {
         // need larger opening balance for creating trust
         val anotherAccount = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
 
-        wrapper.trustAsset(anotherAccount, bpAss, TokenAmount.of(100.0))
-        wrapper.pay(bpAss, distributionPair, anotherAccount, TokenAmount.of(2.0))
-        server.accounts().account(anotherAccount).balanceFor(bpAss)?.balanceAmount() shouldBe TokenAmount.of(2.0)
+        wrapper.trustAsset(anotherAccount, bpt, TokenAmount.of(100.0))
+        wrapper.pay(bpt, distributionPair, anotherAccount, TokenAmount.of(2.0))
+        server.accounts().account(anotherAccount).balanceFor(bpt).amount shouldBe amount(2.0).amount
     }
 
     @Test
-    fun `trading with and without trust lines`() {
+    fun `payments with and without trust lines`() {
         givenIssuedBroniePoints()
 
         val a1 = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
-        wrapper.trustAsset(a1, bpAss, tokenCap)
+        wrapper.trustAsset(a1, bpt, tokenCap)
 
         val a2 = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
-        wrapper.trustAsset(a2, bpAss, tokenCap)
+        wrapper.trustAsset(a2, bpt, tokenCap)
 
         // bp holders can pay each other without further need for trustlines
-        wrapper.pay(bpAss, distributionPair, a1, TokenAmount.of(100.0))
-        wrapper.pay(bpAss, a1, a2, TokenAmount.of(100.0))
+        wrapper.pay(bpt, distributionPair, a1, TokenAmount.of(100.0))
+        wrapper.pay(bpt, a1, a2, TokenAmount.of(100.0))
 
         val a3NoTrust = wrapper.createAccount(TokenAmount.of(100.0))
 
         shouldThrow<IllegalStateException> {
-            wrapper.pay(bpAss, a2, a3NoTrust, TokenAmount.of(10.0))
+            wrapper.pay(bpt, a2, a3NoTrust, TokenAmount.of(10.0))
         }.message should (contain("op_no_trust"))
+    }
+
+    @Test
+    fun `buying some browny points using xlm`() {
+        givenIssuedBroniePoints()
+        val theBuyer = wrapper.createAccount(TokenAmount.of(1000.0))
+        wrapper.trustAsset(theBuyer, bpt, tokenCap)
+
+        wrapper.placeOffer(distributionPair, amount(500, bpt), amount(1000, native))
+        wrapper.placeOffer(theBuyer, amount(10, native), amount(5, bpt))
+
+        val distAccount = server.accounts().account(distributionPair)
+        val buyerAccount = server.accounts().account(theBuyer)
+        println("distribution has ${distAccount.balanceFor(bpt)} ${distAccount.balanceFor(native)}")
+        println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(native)}")
+
+        server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
+
+        wrapper.deleteOffers(theBuyer)
+        wrapper.deleteOffers(distributionPair)
     }
 
     @Test
@@ -136,18 +165,4 @@ class StellarWrapperTest {
             all.size shouldBe 3
         }
     }
-
-//    @Test
-//    fun forever() {
-//        val es = wrapper.listen {
-//            println("${it.id} ${it.type} ${it.transactionHash} ${it.createdAt} ${it.sourceAccount.accountId} ${it.pagingToken}")
-//        }
-////        es.open()
-//            println("should be listening")
-//        while (es.isOpen) {
-//            println("still alive")
-//            Thread.sleep(10000)
-//        }
-//        println("Dead as a doornail")
-//    }
 }

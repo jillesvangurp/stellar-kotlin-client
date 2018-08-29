@@ -4,12 +4,15 @@ import mu.KotlinLogging
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.Validate
 import org.stellar.sdk.Asset
+import org.stellar.sdk.AssetTypeCreditAlphaNum
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
 import org.stellar.sdk.Transaction
 import org.stellar.sdk.requests.ErrorResponse
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
+import org.stellar.sdk.responses.SubmitTransactionTimeoutResponseException
+import org.stellar.sdk.xdr.TransactionResult
 
 // some extensions for classes in the Stellar SDK
 private val logger = KotlinLogging.logger {}
@@ -19,22 +22,11 @@ private val logger = KotlinLogging.logger {}
  */
 fun AccountResponse.describe(): String {
     return """
-accountId: ${keypair.accountId}
-subEntryCount: $subentryCount
-home domain: $homeDomain
+accountId: ${keypair.accountId} subEntryCount: $subentryCount home domain: $homeDomain
 
-Signers
-${signers.map { "${it.key} ${it.weight}" }.joinToString("\n")}
 Balances:
-${balances.map { "balance ${it.assetCode} ${it.assetType} ${it.balance} ${it.limit} ${it.buyingLiabilities} ${it.sellingLiabilities}" }.joinToString(
-"\n"
-)}
-Links:
-${links.effects.href}
-${links.offers.href}
-${links.operations.href}
-${links.transactions.href}
-${links.self.href}
+${balances.map { "balance ${it.asset.assetCode} ${it.balance} ${it.limit}" }
+        .joinToString("\n")}
 """.trimIndent()
 }
 
@@ -52,8 +44,17 @@ fun AccountResponse.balanceMap(): Map<Asset, AccountResponse.Balance> {
 /**
  * Return the balance for a specific Asset.
  */
-fun AccountResponse.balanceFor(asset: Asset): AccountResponse.Balance? {
-    return balanceMap()[asset]
+fun AccountResponse.balanceFor(asset: Asset): TokenAmount {
+    val balance = balanceMap()[asset]
+    return if (balance != null) {
+        balance.tokenAmount()
+    } else {
+        amount(0, asset)
+    }
+}
+
+fun AccountResponse.Balance.tokenAmount(): TokenAmount {
+    return amount(balance, asset)
 }
 
 /**
@@ -110,7 +111,9 @@ fun Server.doTransaction(
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     try {
-        return doTransactionInternal(0, maxTries, keyPair, transactionBlock)
+        val response = doTransactionInternal(0, maxTries, keyPair, transactionBlock)
+        logger.info { response.describe() }
+        return response
     } catch (e: ErrorResponse) {
         logger.warn("${e.code} - ${e.body}")
 
@@ -129,23 +132,33 @@ private fun Server.doTransactionInternal(
     val builder = Transaction.Builder(accounts().account(keyPair))
     transactionBlock.invoke(builder)
     val transaction = builder.buildAndSign(keyPair)
-    val response = submitTransaction(transaction)
-    if (response.isSuccess) {
-        if (tries>0) {
-            logger.info { "transaction succeeded after $tries tries. If you see this a lot, try not doing concurrent modifications against the same account" }
+    transaction.operations.map { "${it.toXdr().sourceAccount} ${it.toXdr().body}" }.joinToString(",")
+    try {
+        val response = submitTransaction(transaction)
+        if (response.isSuccess) {
+            if (tries > 0) {
+                logger.info { "transaction succeeded after $tries tries. If you see this a lot, try not doing concurrent modifications against the same account" }
+            }
+            return response
+        } else {
+            val errorCode = response.extras.resultCodes?.transactionResultCode
+            if (errorCode == "tx_bad_seq" && tries < maxTries) {
+                // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
+                // using increments of 1s because stellar transactions are relatively slow
+                Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
+                return doTransactionInternal(tries + 1, maxTries, keyPair, transactionBlock)
+            } else {
+                val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
+                throw IllegalStateException(
+                    "failure after $tries transaction failed $errorCode - $operationsFailures"
+                )
+            }
         }
-        return response
-    } else {
-        val errorCode = response.extras.resultCodes?.transactionResultCode
-        if (errorCode == "tx_bad_seq" && tries < maxTries) {
-            // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
-            // using increments of 1s because stellar transactions are relatively slow
-            Thread.sleep(RandomUtils.nextLong(100, 1000*(tries.toLong() + 1)))
+    } catch (e: SubmitTransactionTimeoutResponseException) {
+        if (tries < maxTries) {
             return doTransactionInternal(tries + 1, maxTries, keyPair, transactionBlock)
         } else {
-            val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
-            throw IllegalStateException(
-                "failure after $tries transaction failed $errorCode - $operationsFailures")
+            throw e
         }
     }
 }
@@ -153,3 +166,21 @@ private fun Server.doTransactionInternal(
 fun AccountResponse.Balance.balanceAmount(): TokenAmount {
     return TokenAmount.of(balance)
 }
+
+fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
+    return xdrDecodeString(resultXdr, TransactionResult::class)
+}
+
+fun SubmitTransactionResponse.describe(): String {
+    return """$hash success:$isSuccess ${getTransactionResult().result.results.map { it.tr.discriminant.name + " " }
+        .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",")}"""
+}
+
+val Asset.assetCode: String
+    get() {
+        return if (this is AssetTypeCreditAlphaNum) {
+            code
+        } else {
+            "XLM"
+        }
+    }

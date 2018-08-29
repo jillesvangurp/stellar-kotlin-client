@@ -4,12 +4,15 @@ import mu.KotlinLogging
 import org.stellar.sdk.Asset
 import org.stellar.sdk.ChangeTrustOperation
 import org.stellar.sdk.CreateAccountOperation
+import org.stellar.sdk.CreatePassiveOfferOperation
 import org.stellar.sdk.KeyPair
+import org.stellar.sdk.ManageOfferOperation
 import org.stellar.sdk.Memo
 import org.stellar.sdk.Network
 import org.stellar.sdk.PaymentOperation
 import org.stellar.sdk.Server
 import org.stellar.sdk.SetOptionsOperation
+import org.stellar.sdk.responses.OfferResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
 
 private val logger = KotlinLogging.logger {}
@@ -50,13 +53,19 @@ class KotlinStellarWrapper(
      * @param newAccount account that will be created; defaults to a random key pair
      * @return the key pair of the created account
      */
-    fun createAccount(amountLumen: TokenAmount, memo: String? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: Int = defaultMaxTries): KeyPair {
+    fun createAccount(
+        amountLumen: TokenAmount,
+        memo: String? = null,
+        sourceAccount: KeyPair? = null,
+        newAccount: KeyPair = KeyPair.random(),
+        maxTries: Int = defaultMaxTries
+    ): KeyPair {
         if (amountLumen < minimumBalance) {
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
 
         server.doTransaction(sourceAccount ?: rootKeyPair, maxTries = maxTries) {
-            addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.toString()).build())
+            addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
             }
@@ -79,7 +88,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         return server.doTransaction(signer, maxTries = maxTries) {
-            addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.toString()).build())
+            addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.amount).build())
         }
     }
 
@@ -106,6 +115,92 @@ class KotlinStellarWrapper(
         }
     }
 
+    fun placePassiveOffer(
+        signer: KeyPair,
+        selling: Asset,
+        buying: Asset,
+        assetAmount: TokenAmount,
+        buyingPrice: TokenAmount,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
+        return server.doTransaction(signer, maxTries) {
+            addOperation(
+                CreatePassiveOfferOperation.Builder(selling, buying, assetAmount.amount, buyingPrice.amount)
+                    .build()
+            )
+        }
+    }
+
+    fun placeOffer(
+        signer: KeyPair,
+        sell: TokenAmount,
+        forAtLeast: TokenAmount,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
+        val buyingAsset = forAtLeast.asset
+        val sellingAsset = sell.asset
+        if (buyingAsset != null && sellingAsset != null) {
+            if (buyingAsset == sellingAsset) {
+                throw IllegalArgumentException("buying and selling assets must be different")
+            }
+            val priceOf1SellingPerBuying = forAtLeast.divide(sell)
+            return placeOffer(signer, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, maxTries)
+        } else {
+            throw IllegalArgumentException("buying and selling amount must have non null assets")
+        }
+    }
+
+    fun placeOffer(
+        signer: KeyPair,
+        selling: Asset,
+        buying: Asset,
+        sellingAmount: TokenAmount,
+        price: TokenAmount,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
+        val response = server.doTransaction(signer, maxTries) {
+            logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
+            addOperation(
+                ManageOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
+                    .build()
+            )
+        }
+        return response
+    }
+
+    fun deleteOffer(
+        signer: KeyPair,
+        offerResponse: OfferResponse,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
+        val response = server.doTransaction(signer, maxTries) {
+            logger.info { "delete offer ${offerResponse.id}" }
+            addOperation(
+                ManageOfferOperation.Builder(offerResponse.selling, offerResponse.buying, "0", "0")
+                    .setOfferId(offerResponse.id)
+                    .build()
+            )
+        }
+        return response
+    }
+
+    fun deleteOffers(signer: KeyPair, maxTries: Int = defaultMaxTries, limit: Int = 200): SubmitTransactionResponse? {
+        val records = server.offers().forAccount(signer).limit(limit).execute().records
+        if (records.size>0) {
+            return server.doTransaction(signer, maxTries) {
+                records.forEach {
+                    addOperation(
+                        ManageOfferOperation.Builder(it.selling, it.buying, "0", "1")
+                            .setOfferId(it.id)
+                            .build()
+                    )
+                }
+            }
+        } else {
+            return null
+        }
+    }
+
     /**
      * Create a trustline to an asset.
      * @param asset the asset
@@ -125,7 +220,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         return server.doTransaction(sender, maxTries = maxTries) {
-            addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
+            addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
             }
