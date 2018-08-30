@@ -172,8 +172,9 @@ fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
 }
 
 fun SubmitTransactionResponse.describe(): String {
-    return """$hash success:$isSuccess ${getTransactionResult().result.results.map { it.tr.discriminant.name + " " }
-        .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",")}"""
+    val transactionResult = getTransactionResult()
+    return """$ledger $hash success:$isSuccess fee:${transactionResult.feeCharged} ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
+        .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
 }
 
 val Asset.assetCode: String
@@ -181,6 +182,7 @@ val Asset.assetCode: String
         return if (this is AssetTypeCreditAlphaNum) {
             code
         } else {
+            // native
             "XLM"
         }
     }
