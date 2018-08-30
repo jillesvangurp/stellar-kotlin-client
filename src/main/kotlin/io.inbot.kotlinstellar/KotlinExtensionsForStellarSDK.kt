@@ -13,6 +13,8 @@ import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
 import org.stellar.sdk.responses.SubmitTransactionTimeoutResponseException
 import org.stellar.sdk.xdr.TransactionResult
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 
 // some extensions for classes in the Stellar SDK
 private val logger = KotlinLogging.logger {}
@@ -96,6 +98,14 @@ fun KeyPair.validateCanSign() {
     if (!canSign()) {
         throw IllegalArgumentException("Pair has no private key")
     }
+}
+
+fun KeyPair.verify(data: String, base64Signature: String): Boolean {
+    return verify(data.toByteArray(StandardCharsets.UTF_8), Base64.getDecoder().decode(base64Signature))
+}
+
+fun KeyPair.sign(data: String): String {
+    return Base64.getEncoder().encodeToString(sign(data.toByteArray(StandardCharsets.UTF_8)))
 }
 
 /**
