@@ -119,7 +119,7 @@ class KotlinStellarWrapper(
         signer: KeyPair,
         sell: TokenAmount,
         forAtLeast: TokenAmount,
-        passive: Boolean=false,
+        passive: Boolean = false,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         val buyingAsset = forAtLeast.asset
@@ -141,7 +141,7 @@ class KotlinStellarWrapper(
         buying: Asset,
         sellingAmount: TokenAmount,
         price: TokenAmount,
-        passive: Boolean=false,
+        passive: Boolean = false,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         val response = server.doTransaction(signer, maxTries) {
@@ -166,7 +166,7 @@ class KotlinStellarWrapper(
         offerResponse: OfferResponse,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
-        return updateOffer(signer,offerResponse,"0",offerResponse.price,maxTries = maxTries)
+        return updateOffer(signer, offerResponse, "0", offerResponse.price, maxTries = maxTries)
     }
 
     fun updateOffer(

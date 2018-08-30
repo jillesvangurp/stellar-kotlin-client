@@ -156,7 +156,7 @@ class StellarWrapperTest {
         // the offer will not be fulfilled
         server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(5).amount
         // try again at a more reasonable rate
-        wrapper.updateOffer(theBuyer,server.offers().forAccount(theBuyer).execute().records[0], amount(10, native), amount(1, bpt))
+        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0], amount(10, native), amount(1, bpt))
 
         server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(10).amount // you get more than you bargained for
 
