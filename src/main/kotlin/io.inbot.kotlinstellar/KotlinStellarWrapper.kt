@@ -115,26 +115,11 @@ class KotlinStellarWrapper(
         }
     }
 
-    fun placePassiveOffer(
-        signer: KeyPair,
-        selling: Asset,
-        buying: Asset,
-        assetAmount: TokenAmount,
-        buyingPrice: TokenAmount,
-        maxTries: Int = defaultMaxTries
-    ): SubmitTransactionResponse {
-        return server.doTransaction(signer, maxTries) {
-            addOperation(
-                CreatePassiveOfferOperation.Builder(selling, buying, assetAmount.amount, buyingPrice.amount)
-                    .build()
-            )
-        }
-    }
-
     fun placeOffer(
         signer: KeyPair,
         sell: TokenAmount,
         forAtLeast: TokenAmount,
+        passive: Boolean=false,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         val buyingAsset = forAtLeast.asset
@@ -144,7 +129,7 @@ class KotlinStellarWrapper(
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
             val priceOf1SellingPerBuying = forAtLeast.divide(sell)
-            return placeOffer(signer, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, maxTries)
+            return placeOffer(signer, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, passive, maxTries)
         } else {
             throw IllegalArgumentException("buying and selling amount must have non null assets")
         }
@@ -156,14 +141,22 @@ class KotlinStellarWrapper(
         buying: Asset,
         sellingAmount: TokenAmount,
         price: TokenAmount,
+        passive: Boolean=false,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         val response = server.doTransaction(signer, maxTries) {
             logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
-            addOperation(
-                ManageOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
-                    .build()
-            )
+            if (passive) {
+                addOperation(
+                    CreatePassiveOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
+                        .build()
+                )
+            } else {
+                addOperation(
+                    ManageOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
+                        .build()
+                )
+            }
         }
         return response
     }
@@ -173,10 +166,39 @@ class KotlinStellarWrapper(
         offerResponse: OfferResponse,
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
+        return updateOffer(signer,offerResponse,"0",offerResponse.price,maxTries = maxTries)
+    }
+
+    fun updateOffer(
+        signer: KeyPair,
+        offerResponse: OfferResponse,
+        sell: TokenAmount,
+        forAtLeast: TokenAmount,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
+        val buyingAsset = forAtLeast.asset
+        val sellingAsset = sell.asset
+        if (buyingAsset != null && sellingAsset != null) {
+            if (buyingAsset == sellingAsset) {
+                throw IllegalArgumentException("buying and selling assets must be different")
+            }
+            return updateOffer(signer, offerResponse, sell.amount, forAtLeast.divide(sell).amount, maxTries)
+        } else {
+            throw IllegalArgumentException("buying and selling amount must have non null assets")
+        }
+    }
+
+    fun updateOffer(
+        signer: KeyPair,
+        offerResponse: OfferResponse,
+        newAmountSelling: String,
+        newPrice: String,
+        maxTries: Int = defaultMaxTries
+    ): SubmitTransactionResponse {
         val response = server.doTransaction(signer, maxTries) {
             logger.info { "delete offer ${offerResponse.id}" }
             addOperation(
-                ManageOfferOperation.Builder(offerResponse.selling, offerResponse.buying, "0", "0")
+                ManageOfferOperation.Builder(offerResponse.selling, offerResponse.buying, newAmountSelling, newPrice)
                     .setOfferId(offerResponse.id)
                     .build()
             )
@@ -190,7 +212,7 @@ class KotlinStellarWrapper(
             return server.doTransaction(signer, maxTries) {
                 records.forEach {
                     addOperation(
-                        ManageOfferOperation.Builder(it.selling, it.buying, "0", "1")
+                        ManageOfferOperation.Builder(it.selling, it.buying, "0", it.price)
                             .setOfferId(it.id)
                             .build()
                     )

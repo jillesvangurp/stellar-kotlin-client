@@ -133,7 +133,7 @@ class StellarWrapperTest {
     }
 
     @Test
-    fun `buying some browny points using xlm`() {
+    fun `buying some browny points using offers`() {
         givenIssuedBroniePoints()
         val theBuyer = wrapper.createAccount(TokenAmount.of(1000.0))
         wrapper.trustAsset(theBuyer, bpt, tokenCap)
@@ -143,11 +143,24 @@ class StellarWrapperTest {
 
         val distAccount = server.accounts().account(distributionPair)
         val buyerAccount = server.accounts().account(theBuyer)
-        println("distribution has ${distAccount.balanceFor(bpt)} ${distAccount.balanceFor(native)}")
+        val bptAmountAfterFirstOffer = buyerAccount.balanceFor(bpt)
+        bptAmountAfterFirstOffer.amount shouldBe amount(5).amount
+        println("distribution has $bptAmountAfterFirstOffer ${distAccount.balanceFor(native)}")
         println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(native)}")
 
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
 
+        // lets be unreasonable
+        wrapper.placeOffer(theBuyer, amount(10, native), amount(50, bpt))
+        server.offers().forAccount(theBuyer).execute().records.size shouldBe 1
+        // the offer will not be fulfilled
+        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(5).amount
+        // try again at a more reasonable rate
+        wrapper.updateOffer(theBuyer,server.offers().forAccount(theBuyer).execute().records[0], amount(10, native), amount(1, bpt))
+
+        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(10).amount // you get more than you bargained for
+
+        // clean up
         wrapper.deleteOffers(theBuyer)
         wrapper.deleteOffers(distributionPair)
     }

@@ -173,7 +173,8 @@ fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
 
 fun SubmitTransactionResponse.describe(): String {
     val transactionResult = getTransactionResult()
-    return """$ledger $hash success:$isSuccess fee:${transactionResult.feeCharged} ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
+    val fee = transactionResult.feeCharged.int64 ?: 0
+    return """$ledger $hash success:$isSuccess fee:$fee ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
         .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
 }
 
