@@ -90,6 +90,15 @@ test {
     }
 }
 
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'io.inbot.kotlinstellar.cli.CliSteMainKt'
+    }
+    baseName = 'cliste'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 dockerCompose.isRequiredBy(test)
 
 dockerCompose {
@@ -135,9 +144,11 @@ dependencies {
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.24.0'    
     compile "io.github.microutils:kotlin-logging:1.5.8"
     compile 'com.google.guava:guava-testlib:26.0-jre'
+    compile group: 'com.xenomachina', name: 'kotlin-argparser', version: '2.0.7'
+
 
     // FIXME switch to official release once our PR for shading is included
-    implementation 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-6'
+    compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-6'
     compile "org.apache.commons:commons-lang3:3.7"
 
     // bring your own logging, but we need some in tests
