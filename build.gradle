@@ -17,6 +17,9 @@ buildscript {
     }
 }
 
+
+
+apply plugin: 'application'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
 apply plugin: 'org.jetbrains.dokka'
@@ -90,6 +93,9 @@ test {
     }
 }
 
+applicationName = "cliste"
+mainClassName = "io.inbot.kotlinstellar.cli.CliSteMainKt"
+
 task fatJar(type: Jar) {
     manifest {
         attributes 'Main-Class': 'io.inbot.kotlinstellar.cli.CliSteMainKt'
@@ -148,7 +154,7 @@ dependencies {
 
 
     // FIXME switch to official release once our PR for shading is included
-    compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-6'
+    compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-7'
     compile "org.apache.commons:commons-lang3:3.7"
 
     // bring your own logging, but we need some in tests
