@@ -2,6 +2,9 @@ package io.inbot.kotlinstellar.cli
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
+import java.io.File
+import java.io.FileInputStream
+import java.util.Properties
 
 private const val defaultUrl = "https://horizon-testnet.stellar.org"
 
@@ -27,11 +30,22 @@ class CliSteArgs(parser: ArgParser) {
 
     val horizonUrl by parser.storing(
         "-u", "--horizon-url",
-        help = "URL for horizon. Defaults to $defaultUrl"
-    ).default("$defaultUrl")
+        help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty"
+    ).default(System.getenv("ST_HORIZON_URL") ?:"$defaultUrl")
     val commandName by parser.positional("command. one of [balance]").default("balance")
     val commandArgs by parser.positionalList(
         help = "Zero or more args for the command, as required for each command.",
         sizeRange = 0..Int.MAX_VALUE
     )
+
+    val assetPropertiesFileName by parser.storing("-a","--asset-properties",help="Properties file").default("assets.properties")
+
+    val assetProperties by  lazy {
+        val props=Properties()
+        val f=File(assetPropertiesFileName)
+        if(f.exists()) {
+            props.load(FileInputStream(f))
+        }
+        props
+    }
 }
