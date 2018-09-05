@@ -39,13 +39,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
  */
 fun main(args: Array<String>) {
     try {
-        val clisteOpts = System.getenv("CLISTE_ARGS")?.split(" ")?.toTypedArray()
-        val joinedArgs: Array<String>
-        if(clisteOpts != null) {
-            joinedArgs = clisteOpts + args
-        } else {
-            joinedArgs = args
-        }
+        val joinedArgs = System.getenv("CLISTE_ARGS")?.split(" ")?.toTypedArray()?.plus(args) ?: args
         val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
         CommandContext(cliSteArgs).run()
     } catch (e: SystemExitException) {
