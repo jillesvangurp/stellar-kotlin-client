@@ -40,6 +40,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
 fun main(args: Array<String>) {
     try {
         val joinedArgs = System.getenv("CLISTE_ARGS")?.split(" ")?.toTypedArray()?.plus(args) ?: args
+        println(joinedArgs.joinToString(","))
         val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
         CommandContext(cliSteArgs).run()
     } catch (e: SystemExitException) {

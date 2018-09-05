@@ -35,10 +35,15 @@ class CommandContext(val args: CliSteArgs) {
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server)
     }
+
+    val hasPair by lazy { pairInternal != null }
     val pair by lazy { pairInternal ?: throw SystemExitException("This operation requires a key pair",1) }
 
     fun run() {
         try {
+            println(args)
+            println(args.commandArgs.joinToString (",") )
+            println(args.commandName)
             Commands.valueOf(args.commandName).command.invoke(this)
         } catch (e: IllegalArgumentException) {
             if(args.verbose) {

@@ -92,15 +92,16 @@ private val doListKeys: CommandFunction = {
 
 
 class CreateAccountArgs(parser: ArgParser) {
-    val amount by parser.storing("Amount XML to be transferred to the new account (default 20)").default("20")
-    val name by parser.storing("name under which to store the new key, defaults to key-<timestamp>").default("key-${Instant.now().toString()}")
+    val name by parser.positional( "name under which to store the new key, defaults to key-<timestamp>").default("key-${Instant.now().toString()}")
+    val amount by parser.positional("Amount XML to be transferred to the new account (default 20)").default("20")
 }
 
 private val doCreateAccount: CommandFunction = { context ->
     withArgs<CreateAccountArgs>(context.args.commandArgs) {
-        val created = context.wrapper.createAccount(TokenAmount.of(amount), sourceAccount = context.pair)
-        println("created account with secret key ${created.secretSeed}")
-        context.args.keyProperties.put(name,created.secretSeed)
+        // if no pair, it will try to bootstrap a pair
+        val created = context.wrapper.createAccount(TokenAmount.of(amount), sourceAccount = if(context.hasPair) context.pair else null)
+        println("created account with secret key ${String(created.secretSeed)}")
+        context.args.keyProperties.put(name,String(created.secretSeed))
         context.save(context.args.keyProperties,context.args.keyPropertiesFileName)
     }
 }
@@ -132,7 +133,7 @@ enum class Commands(
     listAssets(doListAssets,NoArgs::class, "List the defined assets"),
     defineKey(doDefineAsset, DefineKeyArgs::class),
     listKeys(doListAssets,NoArgs::class, "List the defined keyss"),
-    createAccount(doCreateAccount, CreateAccountArgs::class, helpIntroduction = "Create a new account"),
+    createAccount(doCreateAccount, CreateAccountArgs::class, helpIntroduction = "Create a new account",requiresKey = false),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

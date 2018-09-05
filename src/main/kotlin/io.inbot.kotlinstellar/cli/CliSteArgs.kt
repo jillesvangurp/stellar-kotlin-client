@@ -1,6 +1,6 @@
 package io.inbot.kotlinstellar.cli
 
-import com.xenomachina.argparser.ArgParser
+    import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import java.io.File
 import java.io.FileInputStream
@@ -27,10 +27,9 @@ class CliSteArgs(parser: ArgParser) {
             |""".trimMargin()
     )
         .default(System.getenv("ST_PUBLIC_KEY") ?: "UNDEFINED")
-    val verbose: Boolean by parser.storing(
+    val verbose: Boolean by parser.flagging(
         "-v", "--verbose",
-        help = """Verbose output""".trimMargin(),
-        transform = {toBoolean()}
+        help = """Verbose output""".trimMargin()
     )
         .default(true)
 
@@ -61,11 +60,12 @@ class CliSteArgs(parser: ArgParser) {
         props
     }
 
-    val commandName by parser.positional("command. one of [${Commands.values().map { it.name }.joinToString(",")}]").default("help")
+    val commandName by parser.positional("command").default("help   ")
     val commandArgs by parser.positionalList(
-        help = "Zero or more args for the command, as required for each command.",
+        help = "command plus command specifics.",
         sizeRange = 0..Int.MAX_VALUE
     )
+
 
     override fun toString(): String {
         return """horizon: $horizonUrl
