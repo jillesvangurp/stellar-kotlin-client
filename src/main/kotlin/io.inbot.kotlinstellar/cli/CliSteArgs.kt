@@ -27,16 +27,17 @@ class CliSteArgs(parser: ArgParser) {
             |""".trimMargin()
     )
         .default(System.getenv("ST_PUBLIC_KEY") ?: "UNDEFINED")
+    val verbose: Boolean by parser.storing(
+        "-v", "--verbose",
+        help = """Verbose output""".trimMargin(),
+        transform = {toBoolean()}
+    )
+        .default(true)
 
     val horizonUrl by parser.storing(
         "-u", "--horizon-url",
         help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty"
     ).default(System.getenv("ST_HORIZON_URL") ?:"$defaultUrl")
-    val commandName by parser.positional("command. one of [balance]").default("balance")
-    val commandArgs by parser.positionalList(
-        help = "Zero or more args for the command, as required for each command.",
-        sizeRange = 0..Int.MAX_VALUE
-    )
 
     val assetPropertiesFileName by parser.storing("-a","--asset-properties",help="Properties file with assets").default("assets.properties")
 
@@ -58,6 +59,22 @@ class CliSteArgs(parser: ArgParser) {
             props.load(FileInputStream(f))
         }
         props
+    }
+
+    val commandName by parser.positional("command. one of [${Commands.values().map { it.name }.joinToString(",")}]").default("help")
+    val commandArgs by parser.positionalList(
+        help = "Zero or more args for the command, as required for each command.",
+        sizeRange = 0..Int.MAX_VALUE
+    )
+
+    override fun toString(): String {
+        return """horizon: $horizonUrl
+            |secretKey: $secretKey publicKey: $publicKey
+            |assetPropertiesFileName: $assetPropertiesFileName
+            |keyPropertiesFileName: $keyPropertiesFileName
+            |command: $commandName
+            |commandArgs: ${commandArgs.joinToString(" ")}
+        """.trimMargin()
     }
 
 }

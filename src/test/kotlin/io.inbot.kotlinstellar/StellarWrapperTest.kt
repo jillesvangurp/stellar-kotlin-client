@@ -4,11 +4,6 @@ import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.amount
-import io.inbot.kotlinstellar.balanceAmount
-import io.inbot.kotlinstellar.balanceFor
-import io.inbot.kotlinstellar.findAccount
-import io.inbot.kotlinstellar.getTransactionResult
-import io.inbot.kotlinstellar.toPublicPair
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -24,7 +19,12 @@ import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
+import org.stellar.sdk.findAccount
 import org.stellar.sdk.requests.ErrorResponse
+import org.stellar.sdk.responses.balanceAmount
+import org.stellar.sdk.responses.balanceFor
+import org.stellar.sdk.responses.getTransactionResult
+import org.stellar.sdk.toPublicPair
 
 private val logger = KotlinLogging.logger { }
 

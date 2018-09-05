@@ -17,6 +17,9 @@ class CommandContext(val args: CliSteArgs) {
     val command by lazy { Commands.valueOf(args.commandName) }
 
     init {
+        if(args.verbose) {
+            println(args)
+        }
         if(command.requiresKey) {
             if ("UNDEFINED" != args.secretKey) {
 
@@ -38,6 +41,9 @@ class CommandContext(val args: CliSteArgs) {
         try {
             Commands.valueOf(args.commandName).command.invoke(this)
         } catch (e: IllegalArgumentException) {
+            if(args.verbose) {
+                e.printStackTrace()
+            }
             throw SystemExitException(
                 "Command not supported. Should be one of: ${Commands.values().map { it.name }.joinToString(
                     ", "

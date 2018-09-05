@@ -5,6 +5,10 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import org.junit.jupiter.api.Test
 import org.stellar.sdk.KeyPair
+import org.stellar.sdk.seedString
+import org.stellar.sdk.sign
+import org.stellar.sdk.toPublicPair
+import org.stellar.sdk.verify
 import java.net.URLDecoder
 
 class KotlinExtensionsForStellarSDKTest {
