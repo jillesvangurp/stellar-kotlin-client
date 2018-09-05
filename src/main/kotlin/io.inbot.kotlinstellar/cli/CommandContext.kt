@@ -11,7 +11,7 @@ import java.io.FileOutputStream
 import java.util.Properties
 
 class CommandContext(val args: CliSteArgs) {
-    val pair: KeyPair?
+    private val pairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper
     val command by lazy { Commands.valueOf(args.commandName) }
@@ -20,18 +20,19 @@ class CommandContext(val args: CliSteArgs) {
         if(command.requiresKey) {
             if ("UNDEFINED" != args.secretKey) {
 
-                pair = KeyPair.fromSecretSeed(args.secretKey)
+                pairInternal = KeyPair.fromSecretSeed(args.secretKey)
             } else if ("UNDEFINED" != args.publicKey) {
-                pair = KeyPair.fromAccountId(args.publicKey)
+                pairInternal = KeyPair.fromAccountId(args.publicKey)
             } else {
                 throw SystemExitException("You should specify either a secret or public key.", 1)
             }
         } else {
-            pair = null
+            pairInternal = null
         }
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server)
     }
+    val pair by lazy { pairInternal ?: throw SystemExitException("This operation requires a key pair",1) }
 
     fun run() {
         try {
@@ -43,10 +44,6 @@ class CommandContext(val args: CliSteArgs) {
                 )}.", 1
             )
         }
-    }
-
-    fun saveAssetProperties() {
-        save(args.assetProperties, args.assetPropertiesFileName)
     }
 
     fun save(properties: Properties, fileName: String) {

@@ -38,7 +38,7 @@ class CliSteArgs(parser: ArgParser) {
         sizeRange = 0..Int.MAX_VALUE
     )
 
-    val assetPropertiesFileName by parser.storing("-a","--asset-properties",help="Properties file").default("assets.properties")
+    val assetPropertiesFileName by parser.storing("-a","--asset-properties",help="Properties file with assets").default("assets.properties")
 
     val assetProperties by  lazy {
         val props=Properties()
@@ -48,4 +48,16 @@ class CliSteArgs(parser: ArgParser) {
         }
         props
     }
+
+    val keyPropertiesFileName by parser.storing("-k","--key-properties",help="Properties file with named public or private keys").default("keys.properties")
+
+    val keyProperties by  lazy {
+        val props=Properties()
+        val f=File(keyPropertiesFileName)
+        if(f.exists()) {
+            props.load(FileInputStream(f))
+        }
+        props
+    }
+
 }

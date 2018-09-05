@@ -3,6 +3,7 @@ package io.inbot.kotlinstellar
 import com.google.common.math.LongMath
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
+import org.stellar.sdk.assetCode
 import java.math.MathContext
 import java.util.Locale
 

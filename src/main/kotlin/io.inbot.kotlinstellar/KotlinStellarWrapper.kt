@@ -12,6 +12,8 @@ import org.stellar.sdk.Network
 import org.stellar.sdk.PaymentOperation
 import org.stellar.sdk.Server
 import org.stellar.sdk.SetOptionsOperation
+import org.stellar.sdk.assetCode
+import org.stellar.sdk.doTransaction
 import org.stellar.sdk.responses.OfferResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
 
@@ -243,7 +245,7 @@ class KotlinStellarWrapper(
     ): SubmitTransactionResponse {
         return server.doTransaction(sender, maxTries = maxTries) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
-            if (memo != null) {
+            if (memo != null && memo.length>0) {
                 addMemo(Memo.text(memo))
             }
         }

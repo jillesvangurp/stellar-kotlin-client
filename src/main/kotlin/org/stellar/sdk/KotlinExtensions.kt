@@ -1,63 +1,17 @@
-package io.inbot.kotlinstellar
+package org.stellar.sdk
 
 import mu.KotlinLogging
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.Validate
-import org.stellar.sdk.Asset
-import org.stellar.sdk.AssetTypeCreditAlphaNum
-import org.stellar.sdk.KeyPair
-import org.stellar.sdk.Server
-import org.stellar.sdk.Transaction
 import org.stellar.sdk.requests.ErrorResponse
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
 import org.stellar.sdk.responses.SubmitTransactionTimeoutResponseException
-import org.stellar.sdk.xdr.TransactionResult
+import org.stellar.sdk.responses.describe
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-// some extensions for classes in the Stellar SDK
 private val logger = KotlinLogging.logger {}
-
-/**
- * Return a human readable multi line report with relevant details about the account.
- */
-fun AccountResponse.describe(): String {
-    return """
-accountId: ${keypair.accountId} subEntryCount: $subentryCount home domain: $homeDomain
-
-Balances:
-${balances.map { "balance ${it.asset.assetCode} ${it.balance} ${it.limit}" }
-        .joinToString("\n")}
-""".trimIndent()
-}
-
-/**
- * Return the balances as a map for easy lookups.
- */
-fun AccountResponse.balanceMap(): Map<Asset, AccountResponse.Balance> {
-    val map = mutableMapOf<Asset, AccountResponse.Balance>()
-    balances.forEach {
-        map.put(it.asset, it)
-    }
-    return map.toMap()
-}
-
-/**
- * Return the balance for a specific Asset.
- */
-fun AccountResponse.balanceFor(asset: Asset): TokenAmount {
-    val balance = balanceMap()[asset]
-    return if (balance != null) {
-        balance.tokenAmount()
-    } else {
-        amount(0, asset)
-    }
-}
-
-fun AccountResponse.Balance.tokenAmount(): TokenAmount {
-    return amount(balance, asset)
-}
 
 /**
  * Combine building and signing into a single call.
@@ -107,6 +61,16 @@ fun KeyPair.verify(data: String, base64Signature: String): Boolean {
 fun KeyPair.sign(data: String): String {
     return Base64.getEncoder().encodeToString(sign(data.toByteArray(StandardCharsets.UTF_8)))
 }
+
+val Asset.assetCode: String
+    get() {
+        return if (this is AssetTypeCreditAlphaNum) {
+            code
+        } else {
+            // native
+            "XLM"
+        }
+    }
 
 /**
  * Kotlin helper to create, sign, and submit a transaction.
@@ -172,28 +136,3 @@ private fun Server.doTransactionInternal(
         }
     }
 }
-
-fun AccountResponse.Balance.balanceAmount(): TokenAmount {
-    return TokenAmount.of(balance)
-}
-
-fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
-    return xdrDecodeString(resultXdr, TransactionResult::class)
-}
-
-fun SubmitTransactionResponse.describe(): String {
-    val transactionResult = getTransactionResult()
-    val fee = transactionResult.feeCharged.int64 ?: 0
-    return """$ledger $hash success:$isSuccess fee:$fee ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
-        .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
-}
-
-val Asset.assetCode: String
-    get() {
-        return if (this is AssetTypeCreditAlphaNum) {
-            code
-        } else {
-            // native
-            "XLM"
-        }
-    }
