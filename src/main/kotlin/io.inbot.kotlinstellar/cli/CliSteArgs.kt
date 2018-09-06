@@ -27,25 +27,25 @@ class CliSteArgs(parser: ArgParser) {
     val horizonUrl by parser.storing(
         "-u", "--horizon-url",
         help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty"
-    ).default(System.getenv("ST_HORIZON_URL") ?:"$defaultUrl")
+    ).default(System.getenv("ST_HORIZON_URL") ?: "$defaultUrl")
 
-    val assetPropertiesFileName by parser.storing("--asset-properties",help="Properties file with assets").default("assets.properties")
+    val assetPropertiesFileName by parser.storing("--asset-properties", help = "Properties file with assets").default("assets.properties")
 
-    val assetProperties by  lazy {
-        val props=Properties()
-        val f=File(assetPropertiesFileName)
-        if(f.exists()) {
+    val assetProperties by lazy {
+        val props = Properties()
+        val f = File(assetPropertiesFileName)
+        if (f.exists()) {
             props.load(FileInputStream(f))
         }
         props
     }
 
-    val keyPropertiesFileName by parser.storing("--key-properties",help="Properties file with named public or private keys").default("keys.properties")
+    val keyPropertiesFileName by parser.storing("--key-properties", help = "Properties file with named public or private keys").default("keys.properties")
 
-    val keyProperties by  lazy {
-        val props=Properties()
-        val f=File(keyPropertiesFileName)
-        if(f.exists()) {
+    val keyProperties by lazy {
+        val props = Properties()
+        val f = File(keyPropertiesFileName)
+        if (f.exists()) {
             props.load(FileInputStream(f))
         }
         props
@@ -57,7 +57,6 @@ class CliSteArgs(parser: ArgParser) {
         sizeRange = 0..Int.MAX_VALUE
     )
 
-
     override fun toString(): String {
         return """horizon: $horizonUrl
             |signKey: $signKey
@@ -67,5 +66,4 @@ class CliSteArgs(parser: ArgParser) {
             |commandArgs: ${commandArgs.joinToString(" ")}
         """.trimMargin()
     }
-
 }

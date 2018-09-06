@@ -47,7 +47,6 @@ fun AccountResponse.Balance.tokenAmount(): TokenAmount {
     return amount(balance, asset)
 }
 
-
 fun AccountResponse.Balance.balanceAmount(): TokenAmount {
     return TokenAmount.of(balance)
 }

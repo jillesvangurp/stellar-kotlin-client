@@ -30,34 +30,33 @@ class CommandContext(val args: CliSteArgs) {
 
     init {
         pairInternal = parseOrLookupKeyPair(args.signKey)
-        if(command.requiresKey && pairInternal == null) {
+        if (command.requiresKey && pairInternal == null) {
             throw SystemExitException("You should specify either a secret or public key.", 1)
         }
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server)
     }
     val hashSigningKey by lazy { pairInternal != null }
-    val signingKey by lazy { pairInternal ?: throw SystemExitException("Operation ${args.commandName} requires a key pair",1) }
-
+    val signingKey by lazy { pairInternal ?: throw SystemExitException("Operation ${args.commandName} requires a key pair", 1) }
 
     fun run() {
         try {
-            if(args.verbose) {
+            if (args.verbose) {
                 println("Parsed Arguments: ")
                 println(args)
-                if(hashSigningKey) {
+                if (hashSigningKey) {
                     println("signing key: ${signingKey.seedString()}")
                 }
                 println("-----------------------")
             }
             Commands.valueOf(args.commandName).command.invoke(this)
         } catch (e: SystemExitException) {
-            if(args.verbose) {
+            if (args.verbose) {
                 e.printStackTrace()
             }
             throw e
         } catch (e: Exception) {
-            if(args.verbose) {
+            if (args.verbose) {
                 e.printStackTrace()
             }
             throw SystemExitException(
@@ -72,12 +71,12 @@ class CommandContext(val args: CliSteArgs) {
         properties.store(FileOutputStream(File(fileName)), "assetcode -> issue address")
     }
 
-    fun asset(code:String) : Asset {
-        if(code == "XLM" || code == "native") {
+    fun asset(code: String): Asset {
+        if (code == "XLM" || code == "native") {
             return AssetTypeNative()
         }
         val issuer = args.assetProperties.getProperty(code)
-        if(issuer == null) {
+        if (issuer == null) {
             throw IllegalArgumentException("no such asset defined. Use cliste ${Commands.defineAsset.name} to define the asset")
         } else {
             return Asset.createNonNativeAsset(code, KeyPair.fromAccountId(issuer))

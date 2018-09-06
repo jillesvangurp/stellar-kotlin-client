@@ -31,7 +31,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
         bos.flush()
         return bos.toString("utf-8")
     }
-    throw IllegalStateException("cannot render help for ${commandName} for args class ${clazz.qualifiedName}")
+    throw IllegalStateException("cannot render help for $commandName for args class ${clazz.qualifiedName}")
 }
 
 /**
@@ -41,14 +41,14 @@ fun main(args: Array<String>) {
     try {
         val joinedArgs = System.getenv("CLISTE_ARGS")?.split(" ")?.toTypedArray()?.plus(args) ?: args
         val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
-        if(cliSteArgs.verbose) {
+        if (cliSteArgs.verbose) {
             println("""CLISTE_ARGS = ${System.getenv("CLISTE_ARGS") ?: ""}
                 |commandline args: ${joinedArgs.joinToString(" ")}
             """.trimMargin())
         }
         CommandContext(cliSteArgs).run()
     } catch (e: SystemExitException) {
-        if(e is ShowHelpException) {
+        if (e is ShowHelpException) {
             println(
                 """
             |Cliste Introduction

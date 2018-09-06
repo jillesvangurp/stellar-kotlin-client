@@ -26,7 +26,6 @@ class KotlinExtensionsForStellarSDKTest {
 
     @Test
     fun `should create pair from either public or secret key`() {
-
     }
 
     @Test

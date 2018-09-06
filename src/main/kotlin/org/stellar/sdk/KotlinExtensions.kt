@@ -35,7 +35,7 @@ fun Server.findAccount(pair: KeyPair): AccountResponse? {
     }
 }
 
-fun parseKeyPair(str: String?) : KeyPair? {
+fun parseKeyPair(str: String?): KeyPair? {
     try {
         return KeyPair.fromSecretSeed(str)
     } catch (e: Exception) {
