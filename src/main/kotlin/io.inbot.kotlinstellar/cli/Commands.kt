@@ -40,9 +40,23 @@ class HelpArgs(parser: ArgParser) {
 private val doHelp: CommandFunction = { context ->
     withArgs<HelpArgs>(context.args.commandArgs) {
         if (command == "all") {
-            println("Usage cliste [${Commands.values().joinToString(",")}] arguments...")
+            println("CliSte -  the Commnand Line Interface for Stellar\n")
+            println(renderHelp(CliSteArgs::class, "cliste"))
             println()
+            println("Commands:")
             println(Commands.values().map { it.helpText }.joinToString("\n"))
+
+            println("""Configuring CliSte
+
+You can configure cliste using two environment variables
+
+- `CLISTE_OPTS` any jvm arguments to configure heap, garbage collection, etc. You should not need this normally.
+- `CLISTE_ARGS` default arguments you want to pass to cliste (e.g. your signing key `-k MYKEY`)
+
+Additionally, cliste uses two properties files that you can manage with cliste commands:
+
+- `keys.properties`: a map of key alias to key. You can use either public or private key here. For any argument that takes a key in cliste you can also use the alias. When you do a `cliste createAccount` it will get saved here. You can also use `cliste defineKey` and `cliste listKeys`
+- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage""")
         } else {
             try {
                 println(Commands.valueOf(command).helpText)

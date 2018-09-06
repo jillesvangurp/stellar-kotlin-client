@@ -3,6 +3,7 @@ package io.inbot.kotlinstellar.cli
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.ShowHelpException
 import com.xenomachina.argparser.SystemExitException
+import org.apache.commons.lang3.StringUtils
 import java.io.ByteArrayOutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -26,7 +27,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
     } catch (e: ShowHelpException) {
         val bos = ByteArrayOutputStream()
         val writer = OutputStreamWriter(bos, StandardCharsets.UTF_8)
-        e.printUserMessage(writer, commandName, 0)
+        e.printUserMessage(writer, commandName, 80)
         writer.flush()
         bos.flush()
         return bos.toString("utf-8")
@@ -39,10 +40,16 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
  */
 fun main(args: Array<String>) {
     try {
-        val joinedArgs = System.getenv("CLISTE_ARGS")?.split(" ")?.toTypedArray()?.plus(args) ?: args
+        val defaultArgs = System.getenv("CLISTE_ARGS")
+        val joinedArgs: Array<String>
+        if(StringUtils.isNotBlank(defaultArgs)) {
+            joinedArgs = defaultArgs?.trim()?.split(" ")?.toTypedArray()?.plus(args) ?: args
+        } else {
+            joinedArgs =  args
+        }
         val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
         if (cliSteArgs.verbose) {
-            println("""CLISTE_ARGS = ${System.getenv("CLISTE_ARGS") ?: ""}
+            println("""CLISTE_ARGS = ${defaultArgs ?: ""}
                 |commandline args: ${joinedArgs.joinToString(" ")}
             """.trimMargin())
         }

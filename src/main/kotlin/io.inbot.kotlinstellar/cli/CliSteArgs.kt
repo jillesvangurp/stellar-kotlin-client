@@ -51,7 +51,7 @@ class CliSteArgs(parser: ArgParser) {
         props
     }
 
-    val commandName by parser.positional("command").default("help   ")
+    val commandName by parser.positional("command").default("help")
     val commandArgs by parser.positionalList(
         help = "command plus command specifics.",
         sizeRange = 0..Int.MAX_VALUE
