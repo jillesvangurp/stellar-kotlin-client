@@ -6,7 +6,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.Properties
 
-private const val defaultUrl = "https://horizon-testnet.stellar.org"
+private const val defaultUrl = "http://localhost:8000"
 
 class CliSteArgs(parser: ArgParser) {
     val signKey by parser.storing(
@@ -50,7 +50,7 @@ class CliSteArgs(parser: ArgParser) {
         }
         props
     }
-
+    val networkPassphrase by parser.storing("network password").default("Standalone Network ; February 2017")
     val commandName by parser.positional("command").default("help")
     val commandArgs by parser.positionalList(
         help = "command plus command specifics.",
@@ -59,6 +59,7 @@ class CliSteArgs(parser: ArgParser) {
 
     override fun toString(): String {
         return """horizon: $horizonUrl
+            |networkPassphrase: $networkPassphrase
             |signKey: $signKey
             |assetPropertiesFileName: $assetPropertiesFileName
             |keyPropertiesFileName: $keyPropertiesFileName

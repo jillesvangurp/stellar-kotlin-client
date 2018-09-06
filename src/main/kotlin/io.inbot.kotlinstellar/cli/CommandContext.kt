@@ -34,7 +34,7 @@ class CommandContext(val args: CliSteArgs) {
             throw SystemExitException("You should specify either a secret or public key.", 1)
         }
         server = Server(args.horizonUrl)
-        wrapper = KotlinStellarWrapper(server)
+        wrapper = KotlinStellarWrapper(server,networkPassphrase = args.networkPassphrase)
     }
     val hashSigningKey by lazy { pairInternal != null }
     val signingKey by lazy { pairInternal ?: throw SystemExitException("Operation ${args.commandName} requires a key pair", 1) }
