@@ -27,3 +27,5 @@
 
 # Cruft
 .DS_Store
+keys.properties
+assets.properties
