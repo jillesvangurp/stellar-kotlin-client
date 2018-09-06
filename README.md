@@ -16,7 +16,13 @@ The plan is to keep on adding convenience methods.
 - make dealing with assets, asset codes, and token amounts less painful. The SDK represents amounts as strings; Stellar represents amounts as Long values. So, 1 XLM (the 'native' token) is actually represented as 10^7 or 10M stroops. To make dealing with amounts and calculating rates correctly, we have added a `TokenAmount` data class. This does all the right things and comes with several factory methods so you can construct amounts from a String, a Double, or a pair of longs to represent tokens and stroops. We also add several extension methods to get instances of this class from relevant classes in the SDK
 - `KotlinStellarWrapper` provides simple functions to do common things like creating new accounts, adding trust lines, doing payments, or making offers.
 
-# Examples
+# CliSte - the command line interface for Stellar
+
+As part of this library, we also included a command line interface that you can use to interact with stellar.
+
+[CliSte Documentation](cliste.md)
+
+# Code Examples
 
 Create a custom asset with a trust line as per the [walkthrough](https://www.stellar.org/developers/guides/walkthroughs/custom-assets.html).
 
