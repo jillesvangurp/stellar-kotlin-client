@@ -1,0 +1,6 @@
+#! /bin/bash
+if [ -e ./build/install/cliste/bin/cliste ]; then
+    ./build/install/cliste/bin/cliste $*
+else
+    echo "binary not found; run `gradle installDist` to create it"
+fi
