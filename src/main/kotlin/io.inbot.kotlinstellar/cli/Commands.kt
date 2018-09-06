@@ -101,9 +101,9 @@ private val doDefineKey: CommandFunction = { context ->
 
 private val doListKeys: CommandFunction = {
     println("Defined keys (${it.args.keyProperties.size}):")
-    it.args.keyProperties.forEach({ p ->
+    it.args.keyProperties.forEach { p ->
         val keyPair = parseKeyPair(p.value.toString())
-        println("${p.key}: secretKey ${keyPair?.seedString()?.subSequence(0,6)}.... accountId: ${keyPair?.accountId}") })
+        println("${p.key}: secretKey ${keyPair?.seedString()?.subSequence(0,6)}.... accountId: ${keyPair?.accountId}") }
 }
 
 class CreateAccountArgs(parser: ArgParser) {
