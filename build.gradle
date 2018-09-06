@@ -156,13 +156,13 @@ dependencies {
     // FIXME switch to official release once our PR for shading is included
     compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-7'
     compile "org.apache.commons:commons-lang3:3.7"
+    implementation "ch.qos.logback:logback-classic:1.2.3"
 
     // bring your own logging, but we need some in tests
     testCompile "org.slf4j:slf4j-api:1.7.25"
     testCompile "org.slf4j:jcl-over-slf4j:1.7.25"
     testCompile "org.slf4j:log4j-over-slf4j:1.7.25"
     testCompile "org.slf4j:jul-to-slf4j:1.7.25"
-    testCompile "ch.qos.logback:logback-classic:1.2.3"
 
     testCompile "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testCompile "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
