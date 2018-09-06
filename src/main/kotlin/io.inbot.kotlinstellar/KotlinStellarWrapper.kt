@@ -32,6 +32,11 @@ class KotlinStellarWrapper(
     val minimumBalance: TokenAmount = TokenAmount.of(20, 0),
     val defaultMaxTries: Int = 10
 ) {
+    val network: Network = Network(networkPassphrase)
+
+    init {
+        Network.use(network)
+    }
     /**
      * the keypair associated with the root account; only available if you have a passphrase
      */
@@ -39,10 +44,8 @@ class KotlinStellarWrapper(
         if (networkPassphrase == null) {
             throw IllegalArgumentException("You need to set networkPassphrase if you want root account access. This won't work on the testnet or public net for obvious reasons")
         } else {
-            val standAloneNw = Network("Standalone Network ; February 2017")
-            Network.use(standAloneNw)
-            val networkId = standAloneNw.networkId
-            KeyPair.fromSecretSeed(networkId)
+            logger.info { "using standalone network" }
+            KeyPair.fromSecretSeed(network.networkId)
         }
     }
 

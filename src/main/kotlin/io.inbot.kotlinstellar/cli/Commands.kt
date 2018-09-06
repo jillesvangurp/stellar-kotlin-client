@@ -6,7 +6,9 @@ import io.inbot.kotlinstellar.TokenAmount
 import org.stellar.sdk.Asset
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.assetCode
+import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.responses.describe
+import org.stellar.sdk.seedString
 import java.time.Instant
 import java.util.Locale
 import kotlin.reflect.KClass
@@ -14,7 +16,7 @@ import kotlin.reflect.KClass
 typealias CommandFunction = (CommandContext) -> Unit
 
 private val doBalance: CommandFunction = { context ->
-    println(context.wrapper.server.accounts().account(context.pair).describe())
+    println(context.wrapper.server.accounts().account(context.signingKey).describe())
 }
 
 class NoArgs(@Suppress("UNUSED_PARAMETER") parser: ArgParser) {
@@ -27,7 +29,7 @@ class CommonArgs(parser: ArgParser) {
 
 private val doOffers: CommandFunction = { context ->
     withArgs<CommonArgs>(context.args.commandArgs) {
-        println(context.server.offers().forAccount(context.pair).limit(limit).execute().records.map {
+        println(context.server.offers().forAccount(context.signingKey).limit(limit).execute().records.map {
             "${it.seller.accountId}: ${it.amount} ${it.selling.assetCode} for ${it.buying.assetCode} at ${it.price}"
         }.joinToString("\n"))
     }
@@ -54,15 +56,15 @@ private val doHelp: CommandFunction = { context ->
 }
 
 class DefineAssetArgs(parser: ArgParser) {
-    val assetCode by parser.positional("4 or 12 letter asset code")
     val issuer by parser.positional("public key of the issuer")
+    val assetCode by parser.positional("4 or 12 letter asset code")
 }
 
 private val doDefineAsset: CommandFunction = { context ->
     withArgs<DefineAssetArgs>(context.args.commandArgs) {
-        val keyPair = KeyPair.fromAccountId(issuer) // validate public key
+        val keyPair = context.parseOrLookupKeyPair(issuer) ?: throw IllegalArgumentException("$issuer key not found or malformed")
         Asset.createNonNativeAsset(assetCode, keyPair) // validate we can create the asset
-        context.args.assetProperties.put(assetCode, issuer)
+        context.args.assetProperties.put(assetCode, keyPair.accountId)
         context.save(context.args.assetProperties, context.args.assetPropertiesFileName)
     }
 }
@@ -87,7 +89,9 @@ private val doDefineKey: CommandFunction = { context ->
 
 private val doListKeys: CommandFunction = {
     println("Defined keys (${it.args.keyProperties.size}):")
-    it.args.keyProperties.forEach({p -> println("${p.key}: ${p.value}")})
+    it.args.keyProperties.forEach({p ->
+        val keyPair = parseKeyPair(p.value.toString())
+        println("${p.key}: secretKey ${keyPair?.seedString()?.subSequence(0,6)}.... accountId: ${keyPair?.accountId}")})
 }
 
 
@@ -99,25 +103,37 @@ class CreateAccountArgs(parser: ArgParser) {
 private val doCreateAccount: CommandFunction = { context ->
     withArgs<CreateAccountArgs>(context.args.commandArgs) {
         // if no pair, it will try to bootstrap a pair
-        val created = context.wrapper.createAccount(TokenAmount.of(amount), sourceAccount = if(context.hasPair) context.pair else null)
+        val created = context.wrapper.createAccount(TokenAmount.of(amount), sourceAccount = if(context.hashSigningKey) context.signingKey else null)
         println("created account with secret key ${String(created.secretSeed)}")
         context.args.keyProperties.put(name,String(created.secretSeed))
         context.save(context.args.keyProperties,context.args.keyPropertiesFileName)
     }
 }
 
+class TrustAssetArgs(parser: ArgParser) {
+    val assetCode by parser.positional("Asset that you want to trust. Must be defined in assets.properties")
+    val amount by parser.positional("Amount you trust the asset with")
+}
+
+private val doTrustAsset: CommandFunction = { context ->
+    withArgs<TrustAssetArgs>(context.args.commandArgs) {
+        context.wrapper.trustAsset(context.signingKey, context.asset(assetCode), TokenAmount.of(amount))
+    }
+}
+
 class PayArgs(parser: ArgParser) {
-    val receiver by parser.positional("Receiver account key or name")
+    val receiver by parser.positional("Receiver account key (public or secret) or key name in keys.properties")
     val amount by parser.positional("Amount you are paying")
     val assetCode by parser.positional("Asset that you are paying with")
-    val memo by parser.positional("Optional memo").default("")
-
+    val memo by parser.positional("Optional text memo").default("")
 }
 
 private val doPay: CommandFunction = {context ->
     withArgs<PayArgs>(context.args.commandArgs) {
         val asset = context.asset(assetCode)
-        context.wrapper.pay(asset, context.pair, KeyPair.fromAccountId(receiver),TokenAmount.of(amount),memo)
+        val receiverKey = context.parseOrLookupKeyPair(receiver)
+            ?: throw IllegalArgumentException("key not found in ${context.args.keyPropertiesFileName} or malformed key: $receiver")
+        context.wrapper.pay(asset, context.signingKey, receiverKey,TokenAmount.of(amount),memo)
     }
 }
 
@@ -129,11 +145,13 @@ enum class Commands(
 ) {
     balance(doBalance, helpIntroduction = "Shows the account balance of the specified public key."),
     offers(doOffers, CommonArgs::class),
-    defineAsset(doDefineAsset, DefineAssetArgs::class),
-    listAssets(doListAssets,NoArgs::class, "List the defined assets"),
-    defineKey(doDefineAsset, DefineKeyArgs::class),
-    listKeys(doListAssets,NoArgs::class, "List the defined keyss"),
+    defineAsset(doDefineAsset, DefineAssetArgs::class,requiresKey = false),
+    listAssets(doListAssets,NoArgs::class, "List the defined assets",requiresKey = false),
+    defineKey(doDefineKey, DefineKeyArgs::class,requiresKey = false),
+    listKeys(doListKeys,NoArgs::class, "List the defined keys",requiresKey = false),
     createAccount(doCreateAccount, CreateAccountArgs::class, helpIntroduction = "Create a new account",requiresKey = false),
+    pay(doPay, PayArgs::class,helpIntroduction = "Pay an amount to another account"),
+    trust(doTrustAsset, TrustAssetArgs::class,helpIntroduction = "Trust an asset"),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

@@ -6,6 +6,8 @@ import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
+import org.stellar.sdk.parseKeyPair
+import org.stellar.sdk.seedString
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Properties
@@ -14,36 +16,36 @@ class CommandContext(val args: CliSteArgs) {
     private val pairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper
-    val command by lazy { Commands.valueOf(args.commandName) }
+    val command by lazy {
+        try {
+            Commands.valueOf(args.commandName)
+        } catch (e: Exception) {
+            throw SystemExitException("invalid command name ${args.commandName}",1)
+        }
+    }
 
     init {
-        if(args.verbose) {
-            println(args)
-        }
-        if(command.requiresKey) {
-            if ("UNDEFINED" != args.secretKey) {
-
-                pairInternal = KeyPair.fromSecretSeed(args.secretKey)
-            } else if ("UNDEFINED" != args.publicKey) {
-                pairInternal = KeyPair.fromAccountId(args.publicKey)
-            } else {
-                throw SystemExitException("You should specify either a secret or public key.", 1)
-            }
-        } else {
-            pairInternal = null
+        pairInternal = parseOrLookupKeyPair(args.signKey)
+        if(command.requiresKey && pairInternal == null) {
+            throw SystemExitException("You should specify either a secret or public key.", 1)
         }
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server)
     }
+    val hashSigningKey by lazy { pairInternal != null }
+    val signingKey by lazy { pairInternal ?: throw SystemExitException("Operation ${args.commandName} requires a key pair",1) }
 
-    val hasPair by lazy { pairInternal != null }
-    val pair by lazy { pairInternal ?: throw SystemExitException("This operation requires a key pair",1) }
 
     fun run() {
         try {
-            println(args)
-            println(args.commandArgs.joinToString (",") )
-            println(args.commandName)
+            if(args.verbose) {
+                println(args)
+                if(hashSigningKey) {
+                    println("signing key: ${signingKey.seedString()}")
+                }
+                println(args.commandArgs.joinToString (",") )
+                println(args.commandName)
+            }
             Commands.valueOf(args.commandName).command.invoke(this)
         } catch (e: IllegalArgumentException) {
             if(args.verbose) {
@@ -56,6 +58,8 @@ class CommandContext(val args: CliSteArgs) {
             )
         }
     }
+
+    fun parseOrLookupKeyPair(str: String) = parseKeyPair(args.keyProperties[str]?.toString()) ?: parseKeyPair(str)
 
     fun save(properties: Properties, fileName: String) {
         properties.store(FileOutputStream(File(fileName)), "assetcode -> issue address")

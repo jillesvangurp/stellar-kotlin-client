@@ -35,6 +35,18 @@ fun Server.findAccount(pair: KeyPair): AccountResponse? {
     }
 }
 
+fun parseKeyPair(str: String?) : KeyPair? {
+    try {
+        return KeyPair.fromSecretSeed(str)
+    } catch (e: Exception) {
+        try {
+            return KeyPair.fromAccountId(str)
+        } catch (e: Exception) {
+            return null
+        }
+    }
+}
+
 fun KeyPair.seedString(): String {
     validateCanSign()
     return secretSeed.joinToString("")

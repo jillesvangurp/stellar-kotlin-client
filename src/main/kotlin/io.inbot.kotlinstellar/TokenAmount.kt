@@ -77,7 +77,7 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
             val re = Regex("([0-9]+)(\\.([0-9]+))?")
             val match = re.matchEntire(amount)
             if (match == null) {
-                throw IllegalArgumentException("malformed amount should be xxxx.yyyyyyy")
+                throw IllegalArgumentException("malformed amount $amount should be xxxx.yyyyyyy")
             } else {
                 val tokens = match.groupValues[1].toLong()
                 val stroops = if (StringUtils.isNotBlank(match.groupValues[3])) match.groupValues[3].toLong() else 0
