@@ -4,7 +4,6 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
 import org.stellar.sdk.Asset
-import org.stellar.sdk.KeyPair
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.responses.describe
@@ -81,20 +80,21 @@ private val doDefineAsset: CommandFunction = { context ->
     }
 }
 
-class DefineKeyArgs(parser: ArgParser) {
-    val name by parser.positional("name of the key")
-    val key by parser.positional("key")
-}
 
 private val doListAssets: CommandFunction = {
     println("Defined assets (${it.args.assetProperties.size}):")
     it.args.assetProperties.forEach({ p -> println("${p.key}\t\t${p.value}") })
 }
 
+class DefineKeyArgs(parser: ArgParser) {
+    val name by parser.positional("name of the key")
+    val key by parser.positional("key")
+}
+
 private val doDefineKey: CommandFunction = { context ->
     withArgs<DefineKeyArgs>(context.args.commandArgs) {
-            KeyPair.fromAccountId(key) // validate key
-        context.args.assetProperties.put(name, key)
+        parseKeyPair(key) // validate key
+        context.args.keyProperties.put(name, key)
         context.save(context.args.keyProperties, context.args.keyPropertiesFileName)
     }
 }

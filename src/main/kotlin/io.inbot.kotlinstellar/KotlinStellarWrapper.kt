@@ -19,6 +19,10 @@ import org.stellar.sdk.responses.SubmitTransactionResponse
 
 private val logger = KotlinLogging.logger {}
 
+
+enum class StellarNetwork() {
+    public, testnet, standalone
+}
 /**
  * Helper that makes doing common operations against Stellar less boiler plate heavy.
  * @param server the Stellar Server instance
@@ -30,22 +34,40 @@ class KotlinStellarWrapper(
     val server: Server,
     val networkPassphrase: String? = "Standalone Network ; February 2017",
     val minimumBalance: TokenAmount = TokenAmount.of(20, 0),
-    val defaultMaxTries: Int = 10
+    val defaultMaxTries: Int = 10,
+    val stellarNetwork: StellarNetwork = StellarNetwork.standalone
 ) {
-    val network: Network = Network(networkPassphrase)
 
+    val network: Network?
     init {
-        Network.use(network)
+        when(stellarNetwork) {
+            StellarNetwork.standalone -> {
+                network = Network(networkPassphrase)
+                Network.use(network)
+            }
+            StellarNetwork.testnet -> {
+                network=null
+                Network.useTestNetwork()
+            }
+            StellarNetwork.public -> {
+                network=null
+                Network.usePublicNetwork()
+            }
+        }
     }
     /**
      * the keypair associated with the root account; only available if you have a passphrase
      */
     val rootKeyPair by lazy {
-        if (networkPassphrase == null) {
+        if (networkPassphrase == null && stellarNetwork == StellarNetwork.standalone) {
             throw IllegalArgumentException("You need to set networkPassphrase if you want root account access. This won't work on the testnet or public net for obvious reasons")
         } else {
-            logger.info { "using standalone network" }
-            KeyPair.fromSecretSeed(network.networkId)
+            if(network != null) {
+                logger.info { "using standalone network" }
+                KeyPair.fromSecretSeed(network.networkId)
+            } else {
+                throw IllegalStateException("cannot use root keypair when not on standalone network")
+            }
         }
     }
 
