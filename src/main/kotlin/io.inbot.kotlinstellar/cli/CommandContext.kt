@@ -20,7 +20,11 @@ class CommandContext(val args: CliSteArgs) {
         try {
             Commands.valueOf(args.commandName)
         } catch (e: Exception) {
-            throw SystemExitException("invalid command name ${args.commandName}",1)
+            throw SystemExitException(
+                "Command '${args.commandName}' not supported. Should be one of: ${Commands.values().map { it.name }.joinToString(
+                    ", "
+                )}.", 1
+            )
         }
     }
 
@@ -39,22 +43,25 @@ class CommandContext(val args: CliSteArgs) {
     fun run() {
         try {
             if(args.verbose) {
+                println("Parsed Arguments: ")
                 println(args)
                 if(hashSigningKey) {
                     println("signing key: ${signingKey.seedString()}")
                 }
-                println(args.commandArgs.joinToString (",") )
-                println(args.commandName)
+                println("-----------------------")
             }
             Commands.valueOf(args.commandName).command.invoke(this)
-        } catch (e: IllegalArgumentException) {
+        } catch (e: SystemExitException) {
+            if(args.verbose) {
+                e.printStackTrace()
+            }
+            throw e
+        } catch (e: Exception) {
             if(args.verbose) {
                 e.printStackTrace()
             }
             throw SystemExitException(
-                "Command not supported. Should be one of: ${Commands.values().map { it.name }.joinToString(
-                    ", "
-                )}.", 1
+                "Problem running '${args.commandName}'. ${e.message}", 1
             )
         }
     }
