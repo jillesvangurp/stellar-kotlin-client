@@ -15,8 +15,14 @@ fun AccountResponse.describe(): String {
     return """
 accountId: ${keypair.accountId} subEntryCount: $subentryCount home domain: $homeDomain
 
+thresholds: ${thresholds.lowThreshold} ${thresholds.medThreshold} ${thresholds.highThreshold}
+signers:
+${signers.map { s -> "\t${s.accountId} ${s.weight}" }.joinToString("\n")}
+authRequired: ${flags.authRequired}
+authRevocable: ${flags.authRevocable}
+
 Balances:
-${balances.map { "balance ${it.asset.assetCode} ${it.balance} ${it.limit}" }
+${balances.map { "${it.asset.assetCode} b:${it.balance} l:${it.limit ?: "-"} - sl: ${it.sellingLiabilities ?: "-"} - bl: ${it.buyingLiabilities ?: "-"}" }
         .joinToString("\n")}
 """.trimIndent()
 }
