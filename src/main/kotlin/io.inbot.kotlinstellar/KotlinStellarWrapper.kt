@@ -100,6 +100,7 @@ class KotlinStellarWrapper(
                 addMemo(Memo.text(memo))
             }
         }
+        logger.info { "created ${newAccount.accountId}" }
         return newAccount
     }
 

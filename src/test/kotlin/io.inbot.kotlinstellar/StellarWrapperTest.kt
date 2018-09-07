@@ -16,6 +16,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
@@ -193,16 +194,65 @@ class StellarWrapperTest {
         val s2 = wrapper.createAccount(tokenAmount(200))
         val s3 = wrapper.createAccount(tokenAmount(200))
         val s4 = wrapper.createAccount(tokenAmount(200))
+
         val account = wrapper.createAccount(tokenAmount(200))
+
+        printAccount(account)
+
+        wrapper.pay(native, account, s1, amount(1.0))
+
         wrapper.setAccountOptions(account) {
-            setSigner(s1.xdrSignerKey, 2)
-            setSigner(s2.xdrSignerKey, 2)
-            setSigner(s3.xdrSignerKey, 2)
-            setSigner(s4.xdrSignerKey, 2)
-            setHighThreshold(6)
-            setMediumThreshold(4)
-            setLowThreshold(2)
-            setMasterKeyWeight(0)
+            setSigner(s1.xdrSignerKey,2)
         }
+
+        wrapper.setAccountOptions(account) {
+            setSigner(s2.xdrSignerKey,2)
+        }
+
+        wrapper.setAccountOptions(account) {
+            setSigner(s3.xdrSignerKey,2)
+        }
+
+        wrapper.setAccountOptions(account) {
+            setSigner(s4.xdrSignerKey,2)
+        }
+
+        wrapper.setAccountOptions(account) {
+            setHighThreshold(5)
+            setMediumThreshold(3)
+            setLowThreshold(1)
+//            setMasterKeyWeight(0)
+        }
+
+        printAccount(account)
+
+        wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2,s3))
+
+
+        assertThrows<Exception> {
+            // too many signatures is a problem: https://github.com/stellar/stellar-core/issues/1692
+            wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2, s3, s4))
+        }
+
+        assertThrows<Exception> {
+            wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s1))
+        }
+        assertThrows<Exception> {
+            wrapper.pay(native, account, s1, amount(1.0))
+        }
+
+    }
+
+    fun printAccount(account: KeyPair) {
+        val acc = server.accounts().account(account)
+        println(
+            """
+                thresholds: ${acc.thresholds.lowThreshold} ${acc.thresholds.medThreshold} ${acc.thresholds.highThreshold}
+                signers:
+                ${acc.signers.map { s -> "\t${s.accountId} ${s.weight}" }.joinToString("\n")}
+                authRequired: ${acc.flags.authRequired}
+                authRevocable: ${acc.flags.authRevocable}
+                """.trimIndent()
+        )
     }
 }
