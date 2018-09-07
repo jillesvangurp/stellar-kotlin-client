@@ -87,13 +87,14 @@ class KotlinStellarWrapper(
         memo: String? = null,
         sourceAccount: KeyPair? = null,
         newAccount: KeyPair = KeyPair.random(),
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair)
     ): KeyPair {
         if (amountLumen < minimumBalance) {
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
 
-        server.doTransaction(sourceAccount ?: rootKeyPair, maxTries = maxTries) {
+        server.doTransaction(sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
             addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
@@ -104,29 +105,31 @@ class KotlinStellarWrapper(
 
     /**
      * Create a trustline to an asset.
-     * @param signer account that trusts the asset
+     * @param account account that trusts the asset
      * @param asset the asset
      * @param maxTrustedAmount maximum amount to which you trust the asset
      * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
      * @return transaction response
      */
     fun trustAsset(
-        signer: KeyPair,
+        account: KeyPair,
         asset: Asset,
         maxTrustedAmount: TokenAmount,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        return server.doTransaction(signer, maxTries = maxTries) {
+        return server.doTransaction(account, maxTries = maxTries, signers = signers) {
             addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.amount).build())
         }
     }
 
     fun setAccountOptions(
-        keyPair: KeyPair,
+        account: KeyPair,
         maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account),
         block: SetOptionsOperation.Builder.() -> Unit
     ): SubmitTransactionResponse {
-        return server.doTransaction(keyPair, maxTries = maxTries) {
+        return server.doTransaction(account, maxTries = maxTries, signers = signers) {
             val setOptionsOperationBuilder = SetOptionsOperation.Builder()
             block.invoke(setOptionsOperationBuilder)
             addOperation(
@@ -136,10 +139,11 @@ class KotlinStellarWrapper(
     }
 
     fun placeOffer(
-        signer: KeyPair,
+        account: KeyPair,
         sell: TokenAmount,
         forAtLeast: TokenAmount,
         passive: Boolean = false,
+        signers: Array<KeyPair> = arrayOf(account),
         maxTries: Int = defaultMaxTries
     ): SubmitTransactionResponse {
         val buyingAsset = forAtLeast.asset
@@ -149,22 +153,23 @@ class KotlinStellarWrapper(
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
             val priceOf1SellingPerBuying = forAtLeast.divide(sell)
-            return placeOffer(signer, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, passive, maxTries)
+            return placeOffer(account, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, passive, maxTries, signers = signers)
         } else {
             throw IllegalArgumentException("buying and selling amount must have non null assets")
         }
     }
 
     fun placeOffer(
-        signer: KeyPair,
+        account: KeyPair,
         selling: Asset,
         buying: Asset,
         sellingAmount: TokenAmount,
         price: TokenAmount,
         passive: Boolean = false,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(signer, maxTries) {
+        val response = server.doTransaction(account, maxTries, signers = signers) {
             logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
             if (passive) {
                 addOperation(
@@ -182,19 +187,21 @@ class KotlinStellarWrapper(
     }
 
     fun deleteOffer(
-        signer: KeyPair,
+        account: KeyPair,
         offerResponse: OfferResponse,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        return updateOffer(signer, offerResponse, "0", offerResponse.price, maxTries = maxTries)
+        return updateOffer(account, offerResponse, "0", offerResponse.price, maxTries = maxTries, signers = signers)
     }
 
     fun updateOffer(
-        signer: KeyPair,
+        account: KeyPair,
         offerResponse: OfferResponse,
         sell: TokenAmount,
         forAtLeast: TokenAmount,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
         val buyingAsset = forAtLeast.asset
         val sellingAsset = sell.asset
@@ -202,20 +209,21 @@ class KotlinStellarWrapper(
             if (buyingAsset == sellingAsset) {
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
-            return updateOffer(signer, offerResponse, sell.amount, forAtLeast.divide(sell).amount, maxTries)
+            return updateOffer(account, offerResponse, sell.amount, forAtLeast.divide(sell).amount, maxTries, signers = signers)
         } else {
             throw IllegalArgumentException("buying and selling amount must have non null assets")
         }
     }
 
     fun updateOffer(
-        signer: KeyPair,
+        account: KeyPair,
         offerResponse: OfferResponse,
         newAmountSelling: String,
         newPrice: String,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(signer, maxTries) {
+        val response = server.doTransaction(account, maxTries, signers) {
             logger.info { "delete offer ${offerResponse.id}" }
             addOperation(
                 ManageOfferOperation.Builder(offerResponse.selling, offerResponse.buying, newAmountSelling, newPrice)
@@ -226,10 +234,15 @@ class KotlinStellarWrapper(
         return response
     }
 
-    fun deleteOffers(signer: KeyPair, maxTries: Int = defaultMaxTries, limit: Int = 200): SubmitTransactionResponse? {
-        val records = server.offers().forAccount(signer).limit(limit).execute().records
+    fun deleteOffers(
+        account: KeyPair,
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(account),
+        limit: Int = 200
+    ): SubmitTransactionResponse? {
+        val records = server.offers().forAccount(account).limit(limit).execute().records
         if (records.size > 0) {
-            return server.doTransaction(signer, maxTries) {
+            return server.doTransaction(account, maxTries, signers = signers) {
                 records.forEach {
                     addOperation(
                         ManageOfferOperation.Builder(it.selling, it.buying, "0", it.price)
@@ -259,9 +272,10 @@ class KotlinStellarWrapper(
         receiver: KeyPair,
         amount: TokenAmount,
         memo: String? = null,
-        maxTries: Int = defaultMaxTries
+        maxTries: Int = defaultMaxTries,
+        signers: Array<KeyPair> = arrayOf(sender)
     ): SubmitTransactionResponse {
-        return server.doTransaction(sender, maxTries = maxTries) {
+        return server.doTransaction(sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (memo != null && memo.length > 0) {
                 addMemo(Memo.text(memo))
