@@ -76,6 +76,9 @@ fun KeyPair.sign(data: String): String {
     return Base64.getEncoder().encodeToString(sign(data.toByteArray(StandardCharsets.UTF_8)))
 }
 
+/**
+ * asset code as a string (4 or 12 letter) or XLM if it is native.
+ */
 val Asset.assetCode: String
     get() {
         return if (this is AssetTypeCreditAlphaNum) {
@@ -85,6 +88,12 @@ val Asset.assetCode: String
             "XLM"
         }
     }
+
+fun Server.prepareTransaction(forAccount: KeyPair,transactionBlock: (Transaction.Builder).() -> Unit): Transaction {
+    val builder = Transaction.Builder(accounts().account(forAccount))
+    transactionBlock.invoke(builder)
+    return builder.build()
+}
 
 /**
  * Kotlin helper to create, sign, and submit a transaction.
@@ -96,11 +105,11 @@ val Asset.assetCode: String
 fun Server.doTransaction(
     forAccount: KeyPair,
     maxTries: Int,
-    transactionBlock: (Transaction.Builder).() -> Unit,
-    signers: Array<KeyPair> = arrayOf(forAccount)
+    signers: Array<KeyPair> = arrayOf(forAccount),
+    transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     try {
-        val response = doTransactionInternal(0, maxTries, forAccount, transactionBlock, signers)
+        val response = doTransactionInternal(0, maxTries, forAccount, signers, transactionBlock)
         logger.info { response.describe() }
         return response
     } catch (e: ErrorResponse) {
@@ -114,8 +123,8 @@ private fun Server.doTransactionInternal(
     tries: Int,
     maxTries: Int,
     keyPair: KeyPair,
-    transactionBlock: (Transaction.Builder).() -> Unit,
-    signers: Array<KeyPair> = arrayOf(keyPair)
+    signers: Array<KeyPair>,
+    transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
@@ -135,7 +144,7 @@ private fun Server.doTransactionInternal(
                 // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
                 // using increments of 1s because stellar transactions are relatively slow
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
-                return doTransactionInternal(tries + 1, maxTries, keyPair, transactionBlock)
+                return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionBlock)
             } else {
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
                 throw IllegalStateException(
@@ -145,7 +154,7 @@ private fun Server.doTransactionInternal(
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
         if (tries < maxTries) {
-            return doTransactionInternal(tries + 1, maxTries, keyPair, transactionBlock)
+            return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionBlock)
         } else {
             throw e
         }

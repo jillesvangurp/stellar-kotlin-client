@@ -56,8 +56,8 @@ class TokenAmountTest {
 
     @Test
     fun shouldCalculateRate() {
-        amount(10).divide(amount(20)) shouldBe amount(0.5)
-        amount(10).divide(amount(20)).inverse() shouldBe amount(2.0)
+        tokenAmount(10).divide(tokenAmount(20)) shouldBe amount(0.5)
+        tokenAmount(10).divide(tokenAmount(20)).inverse() shouldBe amount(2.0)
     }
 
     @Test

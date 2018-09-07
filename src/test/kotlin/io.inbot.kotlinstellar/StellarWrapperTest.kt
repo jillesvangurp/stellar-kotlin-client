@@ -4,6 +4,7 @@ import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.amount
+import io.inbot.kotlinstellar.tokenAmount
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -138,27 +139,27 @@ class StellarWrapperTest {
         val theBuyer = wrapper.createAccount(TokenAmount.of(1000.0))
         wrapper.trustAsset(theBuyer, bpt, tokenCap)
 
-        wrapper.placeOffer(distributionPair, amount(500, bpt), amount(1000, native))
-        wrapper.placeOffer(theBuyer, amount(10, native), amount(5, bpt))
+        wrapper.placeOffer(distributionPair, tokenAmount(500, bpt), tokenAmount(1000, native))
+        wrapper.placeOffer(theBuyer, tokenAmount(10, native), tokenAmount(5, bpt))
 
         val distAccount = server.accounts().account(distributionPair)
         val buyerAccount = server.accounts().account(theBuyer)
         val bptAmountAfterFirstOffer = buyerAccount.balanceFor(bpt)
-        bptAmountAfterFirstOffer.amount shouldBe amount(5).amount
+        bptAmountAfterFirstOffer.amount shouldBe tokenAmount(5).amount
         println("distribution has $bptAmountAfterFirstOffer ${distAccount.balanceFor(native)}")
         println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(native)}")
 
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
 
         // lets be unreasonable
-        wrapper.placeOffer(theBuyer, amount(10, native), amount(50, bpt))
+        wrapper.placeOffer(theBuyer, tokenAmount(10, native), tokenAmount(50, bpt))
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 1
         // the offer will not be fulfilled
-        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(5).amount
+        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(5).amount
         // try again at a more reasonable rate
-        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0], amount(10, native), amount(1, bpt))
+        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0], tokenAmount(10, native), tokenAmount(1, bpt))
 
-        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe amount(10).amount // you get more than you bargained for
+        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(10).amount // you get more than you bargained for
 
         // clean up
         wrapper.deleteOffers(theBuyer)

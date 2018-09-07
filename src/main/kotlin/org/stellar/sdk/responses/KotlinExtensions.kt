@@ -2,6 +2,7 @@ package org.stellar.sdk.responses
 
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.amount
+import io.inbot.kotlinstellar.tokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
 import org.stellar.sdk.Asset
 import org.stellar.sdk.assetCode
@@ -39,7 +40,7 @@ fun AccountResponse.balanceFor(asset: Asset): TokenAmount {
     return if (balance != null) {
         balance.tokenAmount()
     } else {
-        amount(0, asset)
+        tokenAmount(0, asset)
     }
 }
 

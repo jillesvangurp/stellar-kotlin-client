@@ -18,7 +18,7 @@ fun amount(tokens: Long, stroops: Long, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(tokens, stroops, asset)
 }
 
-fun amount(tokens: Long, asset: Asset? = null, stroops: Long = 0): TokenAmount {
+fun tokenAmount(tokens: Long, asset: Asset? = null, stroops: Long = 0): TokenAmount {
     return TokenAmount.of(tokens, stroops, asset)
 }
 
