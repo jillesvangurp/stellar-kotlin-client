@@ -16,10 +16,12 @@ private val logger = KotlinLogging.logger {}
 /**
  * Combine building and signing into a single call.
  */
-fun Transaction.Builder.buildAndSign(pair: KeyPair): Transaction {
-    pair.validateCanSign()
+fun Transaction.Builder.buildAndSign(vararg pairs: KeyPair): Transaction {
+    pairs.forEach { it.validateCanSign() }
     val tx = build()
-    tx.sign(pair)
+    pairs.forEach {
+        tx.sign(it)
+    }
     return tx
 }
 
@@ -86,18 +88,19 @@ val Asset.assetCode: String
 
 /**
  * Kotlin helper to create, sign, and submit a transaction.
- * @param keyPair account that signs the transaction
+ * @param forAccount account that signs the transaction
  * @param maxTries the number of times to retry in case of a tx_bad_seq response.
  * @param transactionBlock a block where you can add operations to the transaction
  * @return the response
  */
 fun Server.doTransaction(
-    keyPair: KeyPair,
+    forAccount: KeyPair,
     maxTries: Int,
-    transactionBlock: (Transaction.Builder).() -> Unit
+    transactionBlock: (Transaction.Builder).() -> Unit,
+    signers: Array<KeyPair> = arrayOf(forAccount)
 ): SubmitTransactionResponse {
     try {
-        val response = doTransactionInternal(0, maxTries, keyPair, transactionBlock)
+        val response = doTransactionInternal(0, maxTries, forAccount, transactionBlock, signers)
         logger.info { response.describe() }
         return response
     } catch (e: ErrorResponse) {
@@ -111,14 +114,14 @@ private fun Server.doTransactionInternal(
     tries: Int,
     maxTries: Int,
     keyPair: KeyPair,
-    transactionBlock: (Transaction.Builder).() -> Unit
+    transactionBlock: (Transaction.Builder).() -> Unit,
+    signers: Array<KeyPair> = arrayOf(keyPair)
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
     val builder = Transaction.Builder(accounts().account(keyPair))
     transactionBlock.invoke(builder)
-    val transaction = builder.buildAndSign(keyPair)
-    transaction.operations.map { "${it.toXdr().sourceAccount} ${it.toXdr().body}" }.joinToString(",")
+    val transaction = builder.buildAndSign(*signers)
     try {
         val response = submitTransaction(transaction)
         if (response.isSuccess) {
