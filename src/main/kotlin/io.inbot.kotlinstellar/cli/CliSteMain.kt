@@ -42,10 +42,10 @@ fun main(args: Array<String>) {
     try {
         val defaultArgs = System.getenv("CLISTE_ARGS")
         val joinedArgs: Array<String>
-        if(StringUtils.isNotBlank(defaultArgs)) {
+        if (StringUtils.isNotBlank(defaultArgs)) {
             joinedArgs = defaultArgs?.trim()?.split(" ")?.toTypedArray()?.plus(args) ?: args
         } else {
-            joinedArgs =  args
+            joinedArgs = args
         }
         val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
         if (cliSteArgs.verbose) {

@@ -64,9 +64,16 @@ class StellarWrapperTest {
             // issue the tokens
             wrapper.pay(bpt, issuerPair, distributionPair, tokenCap)
 
-            wrapper.setHomeDomain(issuerPair, "browniepoints.com")
+            wrapper.setAccountOptions(issuerPair) {
+                setHomeDomain("browniepoints.com")
+            }
             // prevent the issuer from ever issueing more tokens
-            val proofTheIssuerCanIssueNoMore = wrapper.lockoutAccount(issuerPair)
+            val proofTheIssuerCanIssueNoMore = wrapper.setAccountOptions(issuerPair) {
+                setMasterKeyWeight(0)
+                setLowThreshold(0)
+                setMediumThreshold(0)
+                setHighThreshold(0)
+            }
 
             proofTheIssuerCanIssueNoMore.getTransactionResult().result.results.forEach {
                 println("${it.tr.discriminant.name} ${it.tr.setOptionsResult.discriminant.name} ")
@@ -177,6 +184,25 @@ class StellarWrapperTest {
             }
             val all = awaitAll(*tasks.toTypedArray())
             all.size shouldBe 3
+        }
+    }
+
+    @Test
+    fun `multi sign a payment`() {
+        val s1 = wrapper.createAccount(tokenAmount(200))
+        val s2 = wrapper.createAccount(tokenAmount(200))
+        val s3 = wrapper.createAccount(tokenAmount(200))
+        val s4 = wrapper.createAccount(tokenAmount(200))
+        val account = wrapper.createAccount(tokenAmount(200))
+        wrapper.setAccountOptions(account) {
+            setSigner(s1.xdrSignerKey, 2)
+            setSigner(s2.xdrSignerKey, 2)
+            setSigner(s3.xdrSignerKey, 2)
+            setSigner(s4.xdrSignerKey, 2)
+            setHighThreshold(6)
+            setMediumThreshold(4)
+            setLowThreshold(2)
+            setMasterKeyWeight(0)
         }
     }
 }

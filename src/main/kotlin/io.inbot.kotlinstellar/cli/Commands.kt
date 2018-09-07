@@ -80,7 +80,6 @@ private val doDefineAsset: CommandFunction = { context ->
     }
 }
 
-
 private val doListAssets: CommandFunction = {
     println("Defined assets (${it.args.assetProperties.size}):")
     it.args.assetProperties.forEach({ p -> println("${p.key}\t\t${p.value}") })

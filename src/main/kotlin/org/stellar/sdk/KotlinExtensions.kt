@@ -89,7 +89,7 @@ val Asset.assetCode: String
         }
     }
 
-fun Server.prepareTransaction(forAccount: KeyPair,transactionBlock: (Transaction.Builder).() -> Unit): Transaction {
+fun Server.prepareTransaction(forAccount: KeyPair, transactionBlock: (Transaction.Builder).() -> Unit): Transaction {
     val builder = Transaction.Builder(accounts().account(forAccount))
     transactionBlock.invoke(builder)
     return builder.build()

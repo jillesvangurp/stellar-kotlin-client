@@ -19,10 +19,10 @@ import org.stellar.sdk.responses.SubmitTransactionResponse
 
 private val logger = KotlinLogging.logger {}
 
-
 enum class StellarNetwork() {
     public, testnet, standalone
 }
+
 /**
  * Helper that makes doing common operations against Stellar less boiler plate heavy.
  * @param server the Stellar Server instance
@@ -39,22 +39,24 @@ class KotlinStellarWrapper(
 ) {
 
     val network: Network?
+
     init {
-        when(stellarNetwork) {
+        when (stellarNetwork) {
             StellarNetwork.standalone -> {
                 network = Network(networkPassphrase)
                 Network.use(network)
             }
             StellarNetwork.testnet -> {
-                network=null
+                network = null
                 Network.useTestNetwork()
             }
             StellarNetwork.public -> {
-                network=null
+                network = null
                 Network.usePublicNetwork()
             }
         }
     }
+
     /**
      * the keypair associated with the root account; only available if you have a passphrase
      */
@@ -62,7 +64,7 @@ class KotlinStellarWrapper(
         if (networkPassphrase == null && stellarNetwork == StellarNetwork.standalone) {
             throw IllegalArgumentException("You need to set networkPassphrase if you want root account access. This won't work on the testnet or public net for obvious reasons")
         } else {
-            if(network != null) {
+            if (network != null) {
                 logger.info { "using standalone network" }
                 KeyPair.fromSecretSeed(network.networkId)
             } else {
@@ -119,25 +121,16 @@ class KotlinStellarWrapper(
         }
     }
 
-    fun setHomeDomain(keyPair: KeyPair, domain: String, maxTries: Int = defaultMaxTries): SubmitTransactionResponse {
+    fun setAccountOptions(
+        keyPair: KeyPair,
+        maxTries: Int = defaultMaxTries,
+        block: SetOptionsOperation.Builder.() -> Unit
+    ): SubmitTransactionResponse {
         return server.doTransaction(keyPair, maxTries = maxTries) {
+            val setOptionsOperationBuilder = SetOptionsOperation.Builder()
+            block.invoke(setOptionsOperationBuilder)
             addOperation(
-                SetOptionsOperation.Builder()
-                    .setHomeDomain(domain)
-                    .build()
-            )
-        }
-    }
-
-    fun lockoutAccount(keyPair: KeyPair, maxTries: Int = defaultMaxTries): SubmitTransactionResponse {
-        return server.doTransaction(keyPair, maxTries = maxTries) {
-            addOperation(
-                SetOptionsOperation.Builder()
-                    .setMasterKeyWeight(0)
-                    .setLowThreshold(0)
-                    .setMediumThreshold(0)
-                    .setHighThreshold(0)
-                    .build()
+                setOptionsOperationBuilder.build()
             )
         }
     }
@@ -235,7 +228,7 @@ class KotlinStellarWrapper(
 
     fun deleteOffers(signer: KeyPair, maxTries: Int = defaultMaxTries, limit: Int = 200): SubmitTransactionResponse? {
         val records = server.offers().forAccount(signer).limit(limit).execute().records
-        if (records.size>0) {
+        if (records.size > 0) {
             return server.doTransaction(signer, maxTries) {
                 records.forEach {
                     addOperation(
@@ -270,7 +263,7 @@ class KotlinStellarWrapper(
     ): SubmitTransactionResponse {
         return server.doTransaction(sender, maxTries = maxTries) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
-            if (memo != null && memo.length>0) {
+            if (memo != null && memo.length > 0) {
                 addMemo(Memo.text(memo))
             }
         }
