@@ -70,9 +70,14 @@ fun main(args: Array<String>) {
         } else {
             joinedArgs = args
         }
+        if(joinedArgs.size == 0) {
+            throw SystemExitException("missing options; run cliste help",1)
+        } else {
+            println(joinedArgs.map { "'$it'" }.joinToString(","))
+        }
         // split so we can pass the command args to the command specific parser without having the main args parser break
-        val (mainArgs,commandArgs) =splitOnCommand(joinedArgs)
-        
+        val (mainArgs,commandArgs) = splitOnCommand(joinedArgs)
+
         val cliSteArgs = ArgParser(mainArgs).parseInto(::CliSteArgs)
         if (cliSteArgs.verbose) {
             println(
@@ -97,6 +102,7 @@ fun main(args: Array<String>) {
             |""".trimMargin()
             )
         }
+        e.printStackTrace()
         e.printAndExit("cliste")
     }
 }

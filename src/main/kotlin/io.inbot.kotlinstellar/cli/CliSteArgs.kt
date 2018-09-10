@@ -11,16 +11,16 @@ import java.util.Properties
 private const val defaultUrl = "http://localhost:8000"
 
 class CliSteArgs(parser: ArgParser) {
-    val accountKey by parser.storing(
-        "-a", "--account-key",
-        help = """Secret key of the account signing the transaction.
-            |Required for any commands that do transactions.
+    val accountKey by parser.storing("-a","--account-key",
+        help = """Account key of the account for the transaction.
+            |Required for any commands that do transactions on accounts.
             |
-            |Defaults to the value of the ST_SECRET_KEY environment variable.
+            |Defaults to the value of the ST_ACCOUNT_KEY environment variable.
             |""".trimMargin()
-    )
-        .default(System.getenv("ST_SECRET_KEY")).default<String?>(null)
-    val signerKeys by parser.adding("-s","--signing-key", help = "Signing key").default(if(accountKey != null) mutableListOf(accountKey) else mutableListOf())
+    ).default<String?>(System.getenv("ST_ACCOUNT_KEY"))
+    // cannot access accountKey in default arg for this; so using a lazy to get to the value after parsing is done
+    private val signerKeysInternal by parser.adding("-s","--signing-key", help = "Signing key")
+    val signerKeys by lazy {if(signerKeysInternal.size==0 && accountKey != null) listOf(accountKey) else signerKeysInternal}
     val verbose: Boolean by parser.flagging(
         "-v", "--verbose",
         help = """Verbose output""".trimMargin()
@@ -30,7 +30,7 @@ class CliSteArgs(parser: ArgParser) {
     val horizonUrl by parser.storing(
         "-u", "--horizon-url",
         help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty"
-    ).default(System.getenv("ST_HORIZON_URL") ?: "$defaultUrl")
+    ).default(System.getenv("ST_HORIZON_URL") ?: defaultUrl)
 
     val assetPropertiesFileName by parser.storing(
         "--asset-properties",
@@ -60,7 +60,7 @@ class CliSteArgs(parser: ArgParser) {
         props
     }
     val standAloneNetworkPassphrase by parser.storing("network password").default("Standalone Network ; February 2017")
-    val stellarNetwork by parser.storing("--stellarNetwork", help = "", transform = {
+    val stellarNetwork by parser.storing("--stellar-network", help = "", transform = {
         try {
             StellarNetwork.valueOf(this)
         } catch (e: IllegalArgumentException) {

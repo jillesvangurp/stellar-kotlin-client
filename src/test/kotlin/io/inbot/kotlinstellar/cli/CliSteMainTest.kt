@@ -20,6 +20,8 @@ class CliSteMainTest {
         splitOnCommand(arrayOf("-x","-y","pay")).second shouldBe arrayOf()
         splitOnCommand(arrayOf("-x","-y")).first shouldBe arrayOf("-x","-y")
         splitOnCommand(arrayOf("-x","-y")).second shouldBe arrayOf()
+        splitOnCommand(arrayOf("help")).first shouldBe arrayOf("help")
+        splitOnCommand(arrayOf("help")).second shouldBe arrayOf()
         splitOnCommand(arrayOf()).first shouldBe arrayOf()
         splitOnCommand(arrayOf()).second shouldBe arrayOf()
     }

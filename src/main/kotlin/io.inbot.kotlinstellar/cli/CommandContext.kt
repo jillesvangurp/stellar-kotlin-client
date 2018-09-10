@@ -31,7 +31,11 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
         if (command.requiresAccount && args.accountKey == null) {
             throw SystemExitException("You should specify --account-key.", 1)
         } else {
-            accountKeyPairInternal = parseOrLookupKeyPair(args.accountKey!!)
+            if(args.accountKey != null) {
+                accountKeyPairInternal = parseOrLookupKeyPair(args.accountKey!! )
+            } else {
+                accountKeyPairInternal = null
+            }
         }
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server, stellarNetwork = args.stellarNetwork, networkPassphrase = args.standAloneNetworkPassphrase)
