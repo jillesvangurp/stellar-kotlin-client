@@ -311,10 +311,12 @@ enum class Commands(
         requiresAccount = false
     ),
     pay(doPay, PayArgs::class, helpIntroduction = "Pay an amount to another account"),
-    preparePaymentTX(doPreparePaymentTX, PayArgs::class, helpIntroduction = "Prepare an XDR transaction for a payment"),
-    txInfo(doTxInfo, PayArgs::class, helpIntroduction = "Show information about an XDR transaction", requiresAccount = false),
-    signTx(doSignTx, PayArgs::class, helpIntroduction = "Sign a transaction in XDR form.", requiresAccount = false),
-    submitTx(doSubmitTx, PayArgs::class, helpIntroduction = "Submit a transaction in XDR form", requiresAccount = false),
+    preparePaymentTX(doPreparePaymentTX, PayArgs::class,
+        helpIntroduction = """Prepare an XDR transaction for a payment. Prints the
+        | XDR of the transaction envelope so you can send it to the signees.""".trimMargin()),
+    txInfo(doTxInfo, PayArgs::class, helpIntroduction = "Show information about an XDR transaction envelope.", requiresAccount = false),
+    signTx(doSignTx, PayArgs::class, helpIntroduction = "Add a signature to a transaction envelope in XDR form.", requiresAccount = false),
+    submitTx(doSubmitTx, PayArgs::class, helpIntroduction = "Submit a transaction envelope in XDR form. You should add signatures first using signTx.", requiresAccount = false),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account    "),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
