@@ -4,14 +4,22 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.SystemExitException
 import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
+import io.inbot.kotlinstellar.xdrDecodeString
+import io.inbot.kotlinstellar.xdrEncode
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.KeyPair
+import org.stellar.sdk.Operation
+import org.stellar.sdk.PaymentOperation
+import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.responses.describe
 import org.stellar.sdk.seedString
+import org.stellar.sdk.xdr.OperationType
+import org.stellar.sdk.xdr.TransactionEnvelope
 import java.time.Instant
+import java.util.Base64
 import java.util.Locale
 import kotlin.reflect.KClass
 
@@ -145,7 +153,12 @@ class TrustAssetArgs(parser: ArgParser) {
 
 private val doTrustAsset: CommandFunction = { context ->
     withArgs<TrustAssetArgs>(context.commandArgs) {
-        context.wrapper.trustAsset(context.accountKeyPair, context.asset(assetCode), TokenAmount.of(amount), signers = context.signers)
+        context.wrapper.trustAsset(
+            context.accountKeyPair,
+            context.asset(assetCode),
+            TokenAmount.of(amount),
+            signers = context.signers
+        )
     }
 }
 
@@ -161,8 +174,83 @@ private val doPay: CommandFunction = { context ->
         val asset = context.asset(assetCode)
         val receiverKey = context.parseOrLookupKeyPair(receiver)
             ?: throw IllegalArgumentException("key not found in ${context.args.keyPropertiesFileName} or malformed key: $receiver")
-        context.wrapper.pay(asset, context.accountKeyPair, receiverKey, TokenAmount.of(amount), memo, signers = context.signers)
+        context.wrapper.pay(
+            asset,
+            context.accountKeyPair,
+            receiverKey,
+            TokenAmount.of(amount),
+            memo,
+            signers = context.signers
+        )
     }
+}
+
+private val doPreparePaymentTX: CommandFunction = { context ->
+    withArgs<PayArgs>(context.commandArgs) {
+        val asset = context.asset(assetCode)
+        val tx = Transaction.Builder(context.server.accounts().account(context.accountKeyPair))
+            .addOperation(PaymentOperation.Builder(context.parseOrLookupKeyPair(receiver), asset, amount).build())
+            .build()
+        println("Transaction envelope xdr:")
+        val transactionEnvelope = TransactionEnvelope()
+        transactionEnvelope.tx = tx.toXdr()
+        transactionEnvelope.signatures = arrayOf()
+        println(xdrEncode(transactionEnvelope))
+    }
+}
+
+class XdrArgs(parser: ArgParser) {
+    val xdr by parser.positional(help = "Base64 xdr of the transaction envelope.")
+}
+
+private val doSignTx: CommandFunction = { context ->
+    withArgs<XdrArgs>(context.commandArgs) {
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        context.signers.forEach {
+            tx.sign(it)
+        }
+        println("Transaction envelope xdr:")
+        println(tx.toEnvelopeXdrBase64())
+    }
+}
+
+private fun stringify(o: Operation): String {
+    val discriminant = o.toXdr().body.discriminant
+    return when(discriminant) {
+        OperationType.PAYMENT -> {
+            val paymentOp = o.toXdr().body.paymentOp
+            "${TokenAmount.ofStroops(paymentOp.amount.int64)} ${Asset.fromXdr(paymentOp.asset).assetCode} to ${KeyPair.fromXdrPublicKey(paymentOp.destination.accountID).accountId}"
+        }
+        else -> "${o.toXdr().body.discriminant}"
+    }
+}
+
+private val doTxInfo: CommandFunction = { context ->
+    withArgs<XdrArgs>(context.commandArgs) {
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val ops = tx.operations
+                .map { stringify(it) }
+                .joinToString("\n")
+
+        println("""${tx.sequenceNumber} operations:
+            |source account: ${tx.sourceAccount.accountId}
+            |$ops
+            |Signatures:
+            |${tx.signatures.map { Base64.getEncoder().encodeToString(it.signature.signature) }.joinToString("\n")}""".trimMargin())
+    }
+}
+
+private val doSubmitTx: CommandFunction = { context ->
+    withArgs<XdrArgs>(context.commandArgs) {
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val txResponse = context.server.submitTransaction(tx)
+        if(txResponse.isSuccess) {
+            println("OK")
+        } else {
+            println("Error response: ${txResponse.extras.resultCodes?.transactionResultCode} - ${txResponse.extras.resultCodes?.operationsResultCodes?.joinToString(", ")}")
+        }
+    }
+
 }
 
 class SetOptionsArgs(parser: ArgParser) {
@@ -194,7 +282,10 @@ private val doSetOptions: CommandFunction = { context ->
                 setHomeDomain(homeDomain)
             }
             if (StringUtils.isNotBlank(signerKey)) {
-                if (signerWeight == null) throw SystemExitException("--signer-weight is required when adding a signer", 1)
+                if (signerWeight == null) throw SystemExitException(
+                    "--signer-weight is required when adding a signer",
+                    1
+                )
                 setSigner(context.parseOrLookupKeyPair(signerKey!!)?.xdrSignerKey, signerWeight)
             }
         }
@@ -220,8 +311,12 @@ enum class Commands(
         requiresAccount = false
     ),
     pay(doPay, PayArgs::class, helpIntroduction = "Pay an amount to another account"),
+    preparePaymentTX(doPreparePaymentTX, PayArgs::class, helpIntroduction = "Prepare an XDR transaction for a payment"),
+    txInfo(doTxInfo, PayArgs::class, helpIntroduction = "Show information about an XDR transaction", requiresAccount = false),
+    signTx(doSignTx, PayArgs::class, helpIntroduction = "Sign a transaction in XDR form.", requiresAccount = false),
+    submitTx(doSubmitTx, PayArgs::class, helpIntroduction = "Submit a transaction in XDR form", requiresAccount = false),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
-    setOptions(doSetOptions,SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
+    setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account    "),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 
