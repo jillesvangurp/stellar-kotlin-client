@@ -27,7 +27,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
     } catch (e: ShowHelpException) {
         val bos = ByteArrayOutputStream()
         val writer = OutputStreamWriter(bos, StandardCharsets.UTF_8)
-        e.printUserMessage(writer, commandName, 80)
+        e.printUserMessage(writer, commandName, 120)
         writer.flush()
         bos.flush()
         return bos.toString("utf-8")
