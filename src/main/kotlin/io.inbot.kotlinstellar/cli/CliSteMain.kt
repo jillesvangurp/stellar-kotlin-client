@@ -35,6 +35,29 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
     throw IllegalStateException("cannot render help for $commandName for args class ${clazz.qualifiedName}")
 }
 
+fun findCommandPos(args: Array<String>): Int {
+    var counter = 0
+    while (counter < args.size &&
+        try {
+            Commands.valueOf(args[counter])
+        } catch (e: IllegalArgumentException) {
+            null
+        } == null
+    ) {
+        counter++;
+    }
+    return counter
+}
+
+fun splitOnCommand(args: Array<String>) : Pair<Array<String>,Array<String>> {
+    val pos = findCommandPos(args)
+    if(pos<args.size -1) {
+        return Pair(args.copyOfRange(0,pos+1),args.copyOfRange(pos+1,args.size))
+    } else {
+        return Pair(args, arrayOf())
+    }
+}
+
 /**
  * Command line tool to interact with stellar. Use this at your own risk.
  */
@@ -47,13 +70,19 @@ fun main(args: Array<String>) {
         } else {
             joinedArgs = args
         }
-        val cliSteArgs = ArgParser(joinedArgs).parseInto(::CliSteArgs)
+        // split so we can pass the command args to the command specific parser without having the main args parser break
+        val (mainArgs,commandArgs) =splitOnCommand(joinedArgs)
+        
+        val cliSteArgs = ArgParser(mainArgs).parseInto(::CliSteArgs)
         if (cliSteArgs.verbose) {
-            println("""CLISTE_ARGS = ${defaultArgs ?: ""}
+            println(
+                """CLISTE_ARGS = ${defaultArgs ?: ""}
                 |commandline args: ${joinedArgs.joinToString(" ")}
-            """.trimMargin())
+            """.trimMargin()
+            )
         }
-        CommandContext(cliSteArgs).run()
+
+        CommandContext(cliSteArgs,commandArgs).run()
     } catch (e: SystemExitException) {
         if (e is ShowHelpException) {
             println(

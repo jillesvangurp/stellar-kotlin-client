@@ -11,15 +11,16 @@ import java.util.Properties
 private const val defaultUrl = "http://localhost:8000"
 
 class CliSteArgs(parser: ArgParser) {
-    val signKey by parser.storing(
-        "-k", "--sign-key",
+    val accountKey by parser.storing(
+        "-a", "--account-key",
         help = """Secret key of the account signing the transaction.
             |Required for any commands that do transactions.
             |
             |Defaults to the value of the ST_SECRET_KEY environment variable.
             |""".trimMargin()
     )
-        .default(System.getenv("ST_SECRET_KEY") ?: "UNDEFINED")
+        .default(System.getenv("ST_SECRET_KEY")).default<String?>(null)
+    val signerKeys by parser.adding("-s","--signing-key", help = "Signing key").default(if(accountKey != null) mutableListOf(accountKey) else mutableListOf())
     val verbose: Boolean by parser.flagging(
         "-v", "--verbose",
         help = """Verbose output""".trimMargin()
@@ -70,20 +71,16 @@ class CliSteArgs(parser: ArgParser) {
         }
     }).default(StellarNetwork.standalone)
     val commandName by parser.positional("command").default("help")
-    val commandArgs by parser.positionalList(
-        help = "command plus command specifics.",
-        sizeRange = 0..Int.MAX_VALUE
-    )
 
     override fun toString(): String {
         return """horizon: $horizonUrl
             |networkPassphrase: $standAloneNetworkPassphrase
             |stellarNetwork: $stellarNetwork
-            |signKey: $signKey
+            |accountKey: $accountKey
+            |signingKeys: ${signerKeys.joinToString(", ")}
             |assetPropertiesFileName: $assetPropertiesFileName
             |keyPropertiesFileName: $keyPropertiesFileName
             |command: $commandName
-            |commandArgs: ${commandArgs.joinToString(" ")}
         """.trimMargin()
     }
 }

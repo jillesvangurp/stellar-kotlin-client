@@ -7,13 +7,12 @@ import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
 import org.stellar.sdk.parseKeyPair
-import org.stellar.sdk.seedString
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Properties
 
-class CommandContext(val args: CliSteArgs) {
-    private val pairInternal: KeyPair?
+class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
+    private val accountKeyPairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper
     val command by lazy {
@@ -29,24 +28,23 @@ class CommandContext(val args: CliSteArgs) {
     }
 
     init {
-        pairInternal = parseOrLookupKeyPair(args.signKey)
-        if (command.requiresKey && pairInternal == null) {
-            throw SystemExitException("You should specify either a secret or public key.", 1)
+        if (command.requiresAccount && args.accountKey == null) {
+            throw SystemExitException("You should specify --account-key.", 1)
+        } else {
+            accountKeyPairInternal = parseOrLookupKeyPair(args.accountKey!!)
         }
         server = Server(args.horizonUrl)
         wrapper = KotlinStellarWrapper(server, stellarNetwork = args.stellarNetwork, networkPassphrase = args.standAloneNetworkPassphrase)
     }
-    val hashSigningKey by lazy { pairInternal != null }
-    val signingKey by lazy { pairInternal ?: throw SystemExitException("Operation ${args.commandName} requires a key pair", 1) }
+    val hasAccountKeyPair by lazy { accountKeyPairInternal != null }
+    val accountKeyPair by lazy { accountKeyPairInternal ?: throw SystemExitException("Operation ${args.commandName} requires --account-key", 1) }
 
+    val signers by lazy {args.signerKeys.map { k -> parseOrLookupKeyPair(k!!) ?: throw SystemExitException("invalid key $k",1) }.toTypedArray()}
     fun run() {
         try {
             if (args.verbose) {
                 println("Parsed Arguments: ")
                 println(args)
-                if (hashSigningKey) {
-                    println("signing key: ${signingKey.seedString()}")
-                }
                 println("-----------------------")
             }
             Commands.valueOf(args.commandName).command.invoke(this)
