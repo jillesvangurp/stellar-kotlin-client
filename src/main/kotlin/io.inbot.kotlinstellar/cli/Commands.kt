@@ -221,7 +221,7 @@ enum class Commands(
     ),
     pay(doPay, PayArgs::class, helpIntroduction = "Pay an amount to another account"),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
-    //    setOptions({},)
+    setOptions(doSetOptions,SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 
