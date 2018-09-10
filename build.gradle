@@ -153,6 +153,7 @@ dependencies {
     // FIXME switch to official release once our PR for shading is included
     compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-8'
     compile "org.apache.commons:commons-lang3:3.8"
+    compile 'org.apache.commons:commons-text:1.4'
     implementation "ch.qos.logback:logback-classic:1.2.3"
 
     // bring your own logging, but we need some in tests

@@ -7,6 +7,7 @@ import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
 import io.inbot.kotlinstellar.xdrEncode
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.text.WordUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Operation
@@ -57,7 +58,7 @@ private val doHelp: CommandFunction = { context ->
             println(Commands.values().map { it.helpText }.joinToString("\n"))
 
             println(
-                """Configuring CliSte
+                WordUtils.wrap("""Configuring CliSte
 
 You can configure cliste using two environment variables
 
@@ -67,8 +68,8 @@ You can configure cliste using two environment variables
 Additionally, cliste uses two properties files that you can manage with cliste commands:
 
 - `keys.properties`: a map of key alias to key. You can use either public or private key here. For any argument that takes a key in cliste you can also use the alias. When you do a `cliste createAccount` it will get saved here. You can also use `cliste defineKey` and `cliste listKeys`
-- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage"""
-            )
+- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage""",120
+            ))
         } else {
             try {
                 println(Commands.valueOf(command).helpText)
@@ -325,6 +326,6 @@ enum class Commands(
     val helpText by lazy {
         """${name.toUpperCase(Locale.ROOT)}
 
-${if (helpIntroduction.length > 0) helpIntroduction + "\n\n" else ""}${renderHelp(clazz, "cliste $name")}"""
+${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction,120) + "\n\n" else ""}${renderHelp(clazz, "cliste $name")}"""
     }
 }
