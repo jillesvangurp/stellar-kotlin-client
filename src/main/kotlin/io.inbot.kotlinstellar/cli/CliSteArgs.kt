@@ -11,7 +11,7 @@ import java.util.Properties
 private const val defaultUrl = "http://localhost:8000"
 
 class CliSteArgs(parser: ArgParser) {
-    val accountKey by parser.storing("-a","--account-key",
+    val accountKey by parser.storing("-a", "--account-key",
         help = """Account key of the account for the transaction.
             |Required for any commands that do transactions on accounts.
             |
@@ -19,8 +19,8 @@ class CliSteArgs(parser: ArgParser) {
             |""".trimMargin()
     ).default<String?>(System.getenv("ST_ACCOUNT_KEY"))
     // cannot access accountKey in default arg for this; so using a lazy to get to the value after parsing is done
-    private val signerKeysInternal by parser.adding("-s","--signing-key", help = "Signing key")
-    val signerKeys by lazy {if(signerKeysInternal.size==0 && accountKey != null) listOf(accountKey) else signerKeysInternal}
+    private val signerKeysInternal by parser.adding("-s", "--signing-key", help = "Signing key")
+    val signerKeys by lazy { if (signerKeysInternal.size == 0 && accountKey != null) listOf(accountKey) else signerKeysInternal }
     val verbose: Boolean by parser.flagging(
         "-v", "--verbose",
         help = """Verbose output""".trimMargin()

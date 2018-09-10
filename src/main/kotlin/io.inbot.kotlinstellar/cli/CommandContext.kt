@@ -31,7 +31,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
         if (command.requiresAccount && args.accountKey == null) {
             throw SystemExitException("You should specify --account-key.", 1)
         } else {
-            if(args.accountKey != null) {
+            if (args.accountKey != null) {
                 accountKeyPairInternal = parseOrLookupKeyPair(args.accountKey!! )
             } else {
                 accountKeyPairInternal = null
@@ -43,7 +43,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
     val hasAccountKeyPair by lazy { accountKeyPairInternal != null }
     val accountKeyPair by lazy { accountKeyPairInternal ?: throw SystemExitException("Operation ${args.commandName} requires --account-key", 1) }
 
-    val signers by lazy {args.signerKeys.map { k -> parseOrLookupKeyPair(k!!) ?: throw SystemExitException("invalid key $k",1) }.toTypedArray()}
+    val signers by lazy { args.signerKeys.map { k -> parseOrLookupKeyPair(k!!) ?: throw SystemExitException("invalid key $k", 1) }.toTypedArray() }
     fun run() {
         try {
             if (args.verbose) {

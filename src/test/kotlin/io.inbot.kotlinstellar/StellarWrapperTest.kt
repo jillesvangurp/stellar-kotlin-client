@@ -202,19 +202,19 @@ class StellarWrapperTest {
         wrapper.pay(native, account, s1, amount(1.0))
 
         wrapper.setAccountOptions(account) {
-            setSigner(s1.xdrSignerKey,2)
+            setSigner(s1.xdrSignerKey, 2)
         }
 
         wrapper.setAccountOptions(account) {
-            setSigner(s2.xdrSignerKey,2)
+            setSigner(s2.xdrSignerKey, 2)
         }
 
         wrapper.setAccountOptions(account) {
-            setSigner(s3.xdrSignerKey,2)
+            setSigner(s3.xdrSignerKey, 2)
         }
 
         wrapper.setAccountOptions(account) {
-            setSigner(s4.xdrSignerKey,2)
+            setSigner(s4.xdrSignerKey, 2)
         }
 
         wrapper.setAccountOptions(account) {
@@ -226,8 +226,7 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2,s3))
-
+        wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2, s3))
 
         assertThrows<Exception> {
             // too many signatures is a problem: https://github.com/stellar/stellar-core/issues/1692
@@ -240,7 +239,6 @@ class StellarWrapperTest {
         assertThrows<Exception> {
             wrapper.pay(native, account, s1, amount(1.0))
         }
-
     }
 
     fun printAccount(account: KeyPair) {

@@ -121,7 +121,7 @@ private val doCreateAccount: CommandFunction = { context ->
 
     withArgs<CreateAccountArgs>(context.commandArgs) {
         val signers: Array<KeyPair>
-        if(context.hasAccountKeyPair) {
+        if (context.hasAccountKeyPair) {
             signers = arrayOf(context.accountKeyPair)
         } else {
             signers = arrayOf(context.wrapper.rootKeyPair)
@@ -190,12 +190,12 @@ private val doSetOptions: CommandFunction = { context ->
             if (masterKeyWeight != null) {
                 setMasterKeyWeight(masterKeyWeight!!)
             }
-            if(StringUtils.isNotBlank(homeDomain)) {
+            if (StringUtils.isNotBlank(homeDomain)) {
                 setHomeDomain(homeDomain)
             }
-            if(StringUtils.isNotBlank(signerKey)) {
-                if(signerWeight == null) throw SystemExitException("--signer-weight is required when adding a signer",1)
-                setSigner(context.parseOrLookupKeyPair(signerKey!!)?.xdrSignerKey,signerWeight)
+            if (StringUtils.isNotBlank(signerKey)) {
+                if (signerWeight == null) throw SystemExitException("--signer-weight is required when adding a signer", 1)
+                setSigner(context.parseOrLookupKeyPair(signerKey!!)?.xdrSignerKey, signerWeight)
             }
         }
     }

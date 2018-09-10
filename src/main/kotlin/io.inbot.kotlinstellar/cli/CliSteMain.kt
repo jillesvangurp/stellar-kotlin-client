@@ -44,15 +44,15 @@ fun findCommandPos(args: Array<String>): Int {
             null
         } == null
     ) {
-        counter++;
+        counter++
     }
     return counter
 }
 
-fun splitOnCommand(args: Array<String>) : Pair<Array<String>,Array<String>> {
+fun splitOnCommand(args: Array<String>): Pair<Array<String>, Array<String>> {
     val pos = findCommandPos(args)
-    if(pos<args.size -1) {
-        return Pair(args.copyOfRange(0,pos+1),args.copyOfRange(pos+1,args.size))
+    if (pos<args.size - 1) {
+        return Pair(args.copyOfRange(0, pos + 1), args.copyOfRange(pos + 1, args.size))
     } else {
         return Pair(args, arrayOf())
     }
@@ -70,13 +70,13 @@ fun main(args: Array<String>) {
         } else {
             joinedArgs = args
         }
-        if(joinedArgs.size == 0) {
-            throw SystemExitException("missing options; run cliste help",1)
+        if (joinedArgs.size == 0) {
+            throw SystemExitException("missing options; run cliste help", 1)
         } else {
             println(joinedArgs.map { "'$it'" }.joinToString(","))
         }
         // split so we can pass the command args to the command specific parser without having the main args parser break
-        val (mainArgs,commandArgs) = splitOnCommand(joinedArgs)
+        val (mainArgs, commandArgs) = splitOnCommand(joinedArgs)
 
         val cliSteArgs = ArgParser(mainArgs).parseInto(::CliSteArgs)
         if (cliSteArgs.verbose) {
@@ -87,7 +87,7 @@ fun main(args: Array<String>) {
             )
         }
 
-        CommandContext(cliSteArgs,commandArgs).run()
+        CommandContext(cliSteArgs, commandArgs).run()
     } catch (e: SystemExitException) {
         if (e is ShowHelpException) {
             println(
