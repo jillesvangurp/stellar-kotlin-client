@@ -17,7 +17,7 @@ accountId: ${keypair.accountId} subEntryCount: $subentryCount home domain: $home
 
 thresholds: ${thresholds.lowThreshold} ${thresholds.medThreshold} ${thresholds.highThreshold}
 signers:
-${signers.map { s -> "\t${s.accountId} ${s.weight}" }.joinToString("\n")}
+${signers.map { s -> "\t${s.key} ${s.weight}" }.joinToString("\n")}
 authRequired: ${flags.authRequired}
 authRevocable: ${flags.authRevocable}
 
