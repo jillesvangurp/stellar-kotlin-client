@@ -157,13 +157,12 @@ class KotlinStellarWrapper(
             if (buyingAsset == sellingAsset) {
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
-            val priceOf1SellingPerBuying = forAtLeast.divide(sell)
             return placeOffer(
                 account,
                 sellingAsset,
                 buyingAsset,
                 sell,
-                priceOf1SellingPerBuying,
+                forAtLeast / sell,
                 passive,
                 maxTries,
                 signers = signers
@@ -227,7 +226,7 @@ class KotlinStellarWrapper(
                 account,
                 offerResponse,
                 sell.amount,
-                forAtLeast.divide(sell).amount,
+                (forAtLeast /   sell).amount,
                 maxTries,
                 signers = signers
             )

@@ -4,17 +4,18 @@ import com.google.common.math.LongMath
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.assetCode
+import java.math.BigDecimal
 import java.math.MathContext
 import java.util.Locale
 
 private val stroopsPerToken = LongMath.pow(10, 7)
 private val maxTokens = Long.MAX_VALUE / stroopsPerToken
 
-fun amount(amount: Double, asset: Asset? = null): TokenAmount {
+fun tokenAmount(amount: Double, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(amount, asset)
 }
 
-fun amount(tokens: Long, stroops: Long, asset: Asset? = null): TokenAmount {
+fun tokenAmount(tokens: Long, stroops: Long, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(tokens, stroops, asset)
 }
 
@@ -22,7 +23,7 @@ fun tokenAmount(tokens: Long, asset: Asset? = null, stroops: Long = 0): TokenAmo
     return TokenAmount.of(tokens, stroops, asset)
 }
 
-fun amount(tokens: String, asset: Asset? = null): TokenAmount {
+fun tokenAmount(tokens: String, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(tokens, asset)
 }
 
@@ -32,6 +33,10 @@ Represents amounts in Stellar. Stellar uses 64 bit longs to store values. To fak
 data class TokenAmount private constructor(val tokens: Long, val stroops: Long, val asset: Asset?) {
 
     val totalStroops by lazy { tokens * stroopsPerToken + stroops }
+
+    val bigDecimalValue by lazy { BigDecimal.valueOf(tokens) + BigDecimal.valueOf(stroops). times(BigDecimal.valueOf(1).divide(BigDecimal.valueOf(
+        stroopsPerToken)))}
+    val doubleValue by lazy { bigDecimalValue.toDouble() }
 
     init {
         if (stroops < 0) {
@@ -48,17 +53,6 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
         }
     }
 
-    fun divide(by: TokenAmount): TokenAmount {
-        val divided = this.totalStroops.toBigDecimal()
-            .divide(by.totalStroops.toBigDecimal(), MathContext.DECIMAL128).toDouble()
-        return TokenAmount.of(divided)
-    }
-
-    fun inverse(): TokenAmount {
-        val inverse = stroopsPerToken.toBigDecimal()
-            .divide(this.totalStroops.toBigDecimal(), MathContext.DECIMAL128).toDouble()
-        return TokenAmount.of(inverse)
-    }
 
     val amount: String by lazy {
         "$tokens.${"%07d".format(Locale.ROOT, stroops)}"
@@ -70,6 +64,32 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
 
     operator fun compareTo(other: TokenAmount): Int {
         return totalStroops.compareTo(other.totalStroops)
+    }
+
+    operator fun plus(other: TokenAmount): TokenAmount {
+        return ofStroops(this.totalStroops + other.totalStroops)
+    }
+
+    operator fun minus(other: TokenAmount): TokenAmount {
+        return ofStroops(this.totalStroops - other.totalStroops)
+    }
+
+    operator fun times(other: TokenAmount): TokenAmount {
+        return of(this.bigDecimalValue.times(other.bigDecimalValue).toDouble())
+    }
+
+    operator fun div(by: TokenAmount): TokenAmount {
+        return of(this.bigDecimalValue.divide(by.bigDecimalValue).toDouble())
+    }
+
+    operator fun rem(by: TokenAmount): TokenAmount {
+        return of(this.bigDecimalValue.remainder(by.bigDecimalValue).toDouble())
+    }
+
+    fun inverse(): TokenAmount {
+        val inverse = stroopsPerToken.toBigDecimal()
+            .divide(this.totalStroops.toBigDecimal(), MathContext.DECIMAL128).toDouble()
+        return TokenAmount.of(inverse)
     }
 
     companion object {

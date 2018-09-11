@@ -3,7 +3,6 @@ package io.inbot.ethclient.stellar
 import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.TokenAmount
-import io.inbot.kotlinstellar.amount
 import io.inbot.kotlinstellar.tokenAmount
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
@@ -117,7 +116,7 @@ class StellarWrapperTest {
 
         wrapper.trustAsset(anotherAccount, bpt, TokenAmount.of(100.0))
         wrapper.pay(distributionPair, anotherAccount, TokenAmount.of(2.0), bpt)
-        server.accounts().account(anotherAccount).balanceFor(bpt).amount shouldBe amount(2.0).amount
+        server.accounts().account(anotherAccount).balanceFor(bpt).amount shouldBe tokenAmount(2.0).amount
     }
 
     @Test
@@ -147,8 +146,14 @@ class StellarWrapperTest {
         val theBuyer = wrapper.createAccount(TokenAmount.of(1000.0))
         wrapper.trustAsset(theBuyer, bpt, tokenCap)
 
-        wrapper.placeOffer(distributionPair, tokenAmount(500, bpt), tokenAmount(1000, native))
-        wrapper.placeOffer(theBuyer, tokenAmount(10, native), tokenAmount(5, bpt))
+        wrapper.placeOffer(distributionPair,
+            tokenAmount(500, bpt),
+            tokenAmount(1000, native)
+        )
+        wrapper.placeOffer(theBuyer,
+            tokenAmount(10, native),
+            tokenAmount(5, bpt)
+        )
 
         val distAccount = server.accounts().account(distributionPair)
         val buyerAccount = server.accounts().account(theBuyer)
@@ -160,12 +165,18 @@ class StellarWrapperTest {
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
 
         // lets be unreasonable
-        wrapper.placeOffer(theBuyer, tokenAmount(10, native), tokenAmount(50, bpt))
+        wrapper.placeOffer(theBuyer,
+            tokenAmount(10, native),
+            tokenAmount(50, bpt)
+        )
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 1
         // the offer will not be fulfilled
         server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(5).amount
         // try again at a more reasonable rate
-        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0], tokenAmount(10, native), tokenAmount(1, bpt))
+        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0],
+            tokenAmount(10, native),
+            tokenAmount(1, bpt)
+        )
 
         server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(10).amount // you get more than you bargained for
 
@@ -199,7 +210,7 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(account, s1, amount(1.0), native)
+        wrapper.pay(account, s1, tokenAmount(1.0), native)
 
         wrapper.setAccountOptions(account) {
             setSigner(s1.xdrSignerKey, 2)
@@ -226,18 +237,18 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s2, s3))
+        wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s2, s3))
 
         assertThrows<Exception> {
             // too many signatures is a problem: https://github.com/stellar/stellar-core/issues/1692
-            wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s2, s3, s4))
+            wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s2, s3, s4))
         }
 
         assertThrows<Exception> {
-            wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s1))
+            wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s1))
         }
         assertThrows<Exception> {
-            wrapper.pay(account, s1, amount(1.0), native)
+            wrapper.pay(account, s1, tokenAmount(1.0), native)
         }
     }
 
@@ -247,10 +258,17 @@ class StellarWrapperTest {
             """
                 thresholds: ${acc.thresholds.lowThreshold} ${acc.thresholds.medThreshold} ${acc.thresholds.highThreshold}
                 signers:
-                ${acc.signers.map { s -> "\t${s.accountId} ${s.weight}" }.joinToString("\n")}
+                ${acc.signers.map { s -> "\t${s.key} ${s.weight}" }.joinToString("\n")}
                 authRequired: ${acc.flags.authRequired}
                 authRevocable: ${acc.flags.authRevocable}
                 """.trimIndent()
         )
     }
+
+//    fun `pre-authorized payments`() {
+//        val alice = wrapper.createAccount(tokenAmount(100))
+//        val bob = wrapper.createAccount(tokenAmount(30))
+//
+//
+//    }
 }

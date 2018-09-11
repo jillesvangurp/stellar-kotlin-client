@@ -1,7 +1,6 @@
 package org.stellar.sdk.responses
 
 import io.inbot.kotlinstellar.TokenAmount
-import io.inbot.kotlinstellar.amount
 import io.inbot.kotlinstellar.tokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
 import org.stellar.sdk.Asset
@@ -51,7 +50,7 @@ fun AccountResponse.balanceFor(asset: Asset): TokenAmount {
 }
 
 fun AccountResponse.Balance.tokenAmount(): TokenAmount {
-    return amount(balance, asset)
+    return tokenAmount(balance, asset)
 }
 
 fun AccountResponse.Balance.balanceAmount(): TokenAmount {
