@@ -1,0 +1,4 @@
+#! /bin/bash
+export CLISTE_ARGS='--stellar-network testnet --horizon-url https://horizon-testnet.stellar.org/ --key-properties testnet-keys.properties --asset-properties=testnet-assets.properties'
+
+./cliste $*

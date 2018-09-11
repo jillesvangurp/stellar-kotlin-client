@@ -1,4 +1,0 @@
-#! /bin/bash
-# source useTestNet
-# cliste ....
-export CLISTE_ARGS='--stellarNetwork testnet --horizon-url https://horizon-testnet.stellar.org/ --key-properties testnet-keys.properties --asset-properties=testnet-assets.properties'
