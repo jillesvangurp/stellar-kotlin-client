@@ -1,6 +1,7 @@
 package io.inbot.kotlinstellar
 
 import mu.KotlinLogging
+import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.ChangeTrustOperation
 import org.stellar.sdk.CreateAccountOperation
@@ -12,10 +13,13 @@ import org.stellar.sdk.Network
 import org.stellar.sdk.PaymentOperation
 import org.stellar.sdk.Server
 import org.stellar.sdk.SetOptionsOperation
+import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.doTransaction
 import org.stellar.sdk.responses.OfferResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
+import org.stellar.sdk.xdr.TransactionEnvelope
+import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger {}
 
@@ -154,7 +158,16 @@ class KotlinStellarWrapper(
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
             val priceOf1SellingPerBuying = forAtLeast.divide(sell)
-            return placeOffer(account, sellingAsset, buyingAsset, sell, priceOf1SellingPerBuying, passive, maxTries, signers = signers)
+            return placeOffer(
+                account,
+                sellingAsset,
+                buyingAsset,
+                sell,
+                priceOf1SellingPerBuying,
+                passive,
+                maxTries,
+                signers = signers
+            )
         } else {
             throw IllegalArgumentException("buying and selling amount must have non null assets")
         }
@@ -210,7 +223,14 @@ class KotlinStellarWrapper(
             if (buyingAsset == sellingAsset) {
                 throw IllegalArgumentException("buying and selling assets must be different")
             }
-            return updateOffer(account, offerResponse, sell.amount, forAtLeast.divide(sell).amount, maxTries, signers = signers)
+            return updateOffer(
+                account,
+                offerResponse,
+                sell.amount,
+                forAtLeast.divide(sell).amount,
+                maxTries,
+                signers = signers
+            )
         } else {
             throw IllegalArgumentException("buying and selling amount must have non null assets")
         }
@@ -259,28 +279,54 @@ class KotlinStellarWrapper(
 
     /**
      * Create a trustline to an asset.
-     * @param asset the asset
      * @param sender sender account
      * @param receiver receiver account
      * @param amount amount to be sent
+     * @param asset the asset
      * @param memo optinoal text memo
      * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
      * @return transaction response
      */
     fun pay(
-        asset: Asset,
         sender: KeyPair,
         receiver: KeyPair,
         amount: TokenAmount,
+        asset: Asset,
         memo: String? = null,
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(sender)
     ): SubmitTransactionResponse {
         return server.doTransaction(sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
-            if (memo != null && memo.length > 0) {
+            if (StringUtils.isNotBlank(memo)) {
+                if(memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
+                    throw IllegalStateException("Memo exceeds limit of 28 bytes")
+                }
                 addMemo(Memo.text(memo))
             }
         }
+    }
+
+    fun preparePaymentTransaction(
+        sender: KeyPair,
+        receiver: KeyPair,
+        amount: TokenAmount,
+        asset: Asset,
+        memo: String? = null
+    ): Pair<String, String> {
+        val txBuilder = Transaction.Builder(server.accounts().account(sender))
+            .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
+        if(StringUtils.isNotBlank(memo)) {
+            if(memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
+                throw IllegalStateException("Memo exceeds limit of 28 bytes")
+            }
+            txBuilder.addMemo(Memo.text(memo))
+        }
+        val tx= txBuilder.build()
+        println("Transaction envelope xdr:")
+        val transactionEnvelope = TransactionEnvelope()
+        transactionEnvelope.tx = tx.toXdr()
+        transactionEnvelope.signatures = arrayOf()
+        return Pair(tx.hash().toString(StandardCharsets.UTF_8),xdrEncode(transactionEnvelope))
     }
 }

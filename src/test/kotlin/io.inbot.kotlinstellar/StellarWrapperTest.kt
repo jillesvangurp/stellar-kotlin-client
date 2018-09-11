@@ -63,7 +63,7 @@ class StellarWrapperTest {
             wrapper.createAccount(amountLumen = TokenAmount.of(1000, 0), sourceAccount = sourcePair, newAccount = distributionPair)
             wrapper.trustAsset(distributionPair, bpt, tokenCap)
             // issue the tokens
-            wrapper.pay(bpt, issuerPair, distributionPair, tokenCap)
+            wrapper.pay(issuerPair, distributionPair, tokenCap, bpt)
 
             wrapper.setAccountOptions(issuerPair) {
                 setHomeDomain("browniepoints.com")
@@ -116,7 +116,7 @@ class StellarWrapperTest {
         val anotherAccount = wrapper.createAccount(TokenAmount.of(100.0), "receiver")
 
         wrapper.trustAsset(anotherAccount, bpt, TokenAmount.of(100.0))
-        wrapper.pay(bpt, distributionPair, anotherAccount, TokenAmount.of(2.0))
+        wrapper.pay(distributionPair, anotherAccount, TokenAmount.of(2.0), bpt)
         server.accounts().account(anotherAccount).balanceFor(bpt).amount shouldBe amount(2.0).amount
     }
 
@@ -131,13 +131,13 @@ class StellarWrapperTest {
         wrapper.trustAsset(a2, bpt, tokenCap)
 
         // bp holders can pay each other without further need for trustlines
-        wrapper.pay(bpt, distributionPair, a1, TokenAmount.of(100.0))
-        wrapper.pay(bpt, a1, a2, TokenAmount.of(100.0))
+        wrapper.pay(distributionPair, a1, TokenAmount.of(100.0), bpt)
+        wrapper.pay(a1, a2, TokenAmount.of(100.0), bpt)
 
         val a3NoTrust = wrapper.createAccount(TokenAmount.of(100.0))
 
         shouldThrow<IllegalStateException> {
-            wrapper.pay(bpt, a2, a3NoTrust, TokenAmount.of(10.0))
+            wrapper.pay(a2, a3NoTrust, TokenAmount.of(10.0), bpt)
         }.message should (contain("op_no_trust"))
     }
 
@@ -199,7 +199,7 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(native, account, s1, amount(1.0))
+        wrapper.pay(account, s1, amount(1.0), native)
 
         wrapper.setAccountOptions(account) {
             setSigner(s1.xdrSignerKey, 2)
@@ -226,18 +226,18 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2, s3))
+        wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s2, s3))
 
         assertThrows<Exception> {
             // too many signatures is a problem: https://github.com/stellar/stellar-core/issues/1692
-            wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s2, s3, s4))
+            wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s2, s3, s4))
         }
 
         assertThrows<Exception> {
-            wrapper.pay(native, account, s1, amount(1.0), signers = arrayOf(s1))
+            wrapper.pay(account, s1, amount(1.0), native, signers = arrayOf(s1))
         }
         assertThrows<Exception> {
-            wrapper.pay(native, account, s1, amount(1.0))
+            wrapper.pay(account, s1, amount(1.0), native)
         }
     }
 

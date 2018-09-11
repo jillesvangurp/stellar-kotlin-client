@@ -5,13 +5,11 @@ import com.xenomachina.argparser.SystemExitException
 import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
-import io.inbot.kotlinstellar.xdrEncode
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.text.WordUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Operation
-import org.stellar.sdk.PaymentOperation
 import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
@@ -58,7 +56,8 @@ private val doHelp: CommandFunction = { context ->
             println(Commands.values().map { it.helpText }.joinToString("\n"))
 
             println(
-                WordUtils.wrap("""Configuring CliSte
+                WordUtils.wrap(
+                    """Configuring CliSte
 
 You can configure cliste using two environment variables
 
@@ -68,8 +67,10 @@ You can configure cliste using two environment variables
 Additionally, cliste uses two properties files that you can manage with cliste commands:
 
 - `keys.properties`: a map of key alias to key. You can use either public or private key here. For any argument that takes a key in cliste you can also use the alias. When you do a `cliste createAccount` it will get saved here. You can also use `cliste defineKey` and `cliste listKeys`
-- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage""",120
-            ))
+- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage""",
+                    120
+                )
+            )
         } else {
             try {
                 println(Commands.valueOf(command).helpText)
@@ -176,10 +177,10 @@ private val doPay: CommandFunction = { context ->
         val receiverKey = context.parseOrLookupKeyPair(receiver)
             ?: throw IllegalArgumentException("key not found in ${context.args.keyPropertiesFileName} or malformed key: $receiver")
         context.wrapper.pay(
-            asset,
             context.accountKeyPair,
             receiverKey,
             TokenAmount.of(amount),
+            asset,
             memo,
             signers = context.signers
         )
@@ -188,15 +189,14 @@ private val doPay: CommandFunction = { context ->
 
 private val doPreparePaymentTX: CommandFunction = { context ->
     withArgs<PayArgs>(context.commandArgs) {
-        val asset = context.asset(assetCode)
-        val tx = Transaction.Builder(context.server.accounts().account(context.accountKeyPair))
-            .addOperation(PaymentOperation.Builder(context.parseOrLookupKeyPair(receiver), asset, amount).build())
-            .build()
-        println("Transaction envelope xdr:")
-        val transactionEnvelope = TransactionEnvelope()
-        transactionEnvelope.tx = tx.toXdr()
-        transactionEnvelope.signatures = arrayOf()
-        println(xdrEncode(transactionEnvelope))
+        val (hash, xdr) = context.wrapper.preparePaymentTransaction(
+            context.accountKeyPair,
+            context.parseOrLookupKeyPairAndValidate(receiver),
+            TokenAmount.of(amount),
+            context.asset(assetCode)
+        )
+        println("tx hash: $hash")
+        println("tx envelope xdr: $xdr")
     }
 }
 
@@ -217,10 +217,12 @@ private val doSignTx: CommandFunction = { context ->
 
 private fun stringify(o: Operation): String {
     val discriminant = o.toXdr().body.discriminant
-    return when(discriminant) {
+    return when (discriminant) {
         OperationType.PAYMENT -> {
             val paymentOp = o.toXdr().body.paymentOp
-            "${TokenAmount.ofStroops(paymentOp.amount.int64)} ${Asset.fromXdr(paymentOp.asset).assetCode} to ${KeyPair.fromXdrPublicKey(paymentOp.destination.accountID).accountId}"
+            "${TokenAmount.ofStroops(paymentOp.amount.int64)} ${Asset.fromXdr(paymentOp.asset).assetCode} to ${KeyPair.fromXdrPublicKey(
+                paymentOp.destination.accountID
+            ).accountId}"
         }
         else -> "${o.toXdr().body.discriminant}"
     }
@@ -230,14 +232,17 @@ private val doTxInfo: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
         val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
         val ops = tx.operations
-                .map { stringify(it) }
-                .joinToString("\n")
+            .map { stringify(it) }
+            .joinToString("\n")
 
         println("""${tx.sequenceNumber} operations:
             |source account: ${tx.sourceAccount.accountId}
             |$ops
             |Signatures:
-            |${tx.signatures.map { Base64.getEncoder().encodeToString(it.signature.signature) }.joinToString("\n")}""".trimMargin())
+            |${tx.signatures.map {
+            Base64.getEncoder().encodeToString(it.signature.signature)
+        }.joinToString("\n")}""".trimMargin()
+        )
     }
 }
 
@@ -245,10 +250,14 @@ private val doSubmitTx: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
         val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
         val txResponse = context.server.submitTransaction(tx)
-        if(txResponse.isSuccess) {
+        if (txResponse.isSuccess) {
             println("OK")
         } else {
-            println("Error response: ${txResponse.extras.resultCodes?.transactionResultCode} - ${txResponse.extras.resultCodes?.operationsResultCodes?.joinToString(", ")}")
+            println(
+                "Error response: ${txResponse.extras.resultCodes?.transactionResultCode} - ${txResponse.extras.resultCodes?.operationsResultCodes?.joinToString(
+                    ", "
+                )}"
+            )
         }
     }
 
@@ -312,12 +321,29 @@ enum class Commands(
         requiresAccount = false
     ),
     pay(doPay, PayArgs::class, helpIntroduction = "Pay an amount to another account"),
-    preparePaymentTX(doPreparePaymentTX, PayArgs::class,
+    preparePaymentTX(
+        doPreparePaymentTX, PayArgs::class,
         helpIntroduction = """Prepare an XDR transaction for a payment. Prints the
-        | XDR of the transaction envelope so you can send it to the signees.""".trimMargin()),
-    txInfo(doTxInfo, PayArgs::class, helpIntroduction = "Show information about an XDR transaction envelope.", requiresAccount = false),
-    signTx(doSignTx, PayArgs::class, helpIntroduction = "Add a signature to a transaction envelope in XDR form.", requiresAccount = false),
-    submitTx(doSubmitTx, PayArgs::class, helpIntroduction = "Submit a transaction envelope in XDR form. You should add signatures first using signTx.", requiresAccount = false),
+        | XDR of the transaction envelope so you can send it to the signees.""".trimMargin()
+    ),
+    txInfo(
+        doTxInfo,
+        PayArgs::class,
+        helpIntroduction = "Show information about an XDR transaction envelope.",
+        requiresAccount = false
+    ),
+    signTx(
+        doSignTx,
+        PayArgs::class,
+        helpIntroduction = "Add a signature to a transaction envelope in XDR form.",
+        requiresAccount = false
+    ),
+    submitTx(
+        doSubmitTx,
+        PayArgs::class,
+        helpIntroduction = "Submit a transaction envelope in XDR form. You should add signatures first using signTx.",
+        requiresAccount = false
+    ),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account    "),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
@@ -326,6 +352,9 @@ enum class Commands(
     val helpText by lazy {
         """${name.toUpperCase(Locale.ROOT)}
 
-${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction,120) + "\n\n" else ""}${renderHelp(clazz, "cliste $name")}"""
+${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 120) + "\n\n" else ""}${renderHelp(
+            clazz,
+            "cliste $name"
+        )}"""
     }
 }

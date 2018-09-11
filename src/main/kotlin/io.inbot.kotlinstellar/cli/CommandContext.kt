@@ -27,12 +27,13 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
         }
     }
 
+
     init {
         if (command.requiresAccount && args.accountKey == null) {
             throw SystemExitException("You should specify --account-key.", 1)
         } else {
             if (args.accountKey != null) {
-                accountKeyPairInternal = parseOrLookupKeyPair(args.accountKey!! )
+                accountKeyPairInternal = parseOrLookupKeyPairAndValidate(args.accountKey!! )
             } else {
                 accountKeyPairInternal = null
             }
@@ -43,7 +44,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
     val hasAccountKeyPair by lazy { accountKeyPairInternal != null }
     val accountKeyPair by lazy { accountKeyPairInternal ?: throw SystemExitException("Operation ${args.commandName} requires --account-key", 1) }
 
-    val signers by lazy { args.signerKeys.map { k -> parseOrLookupKeyPair(k!!) ?: throw SystemExitException("invalid key $k", 1) }.toTypedArray() }
+    val signers by lazy { args.signerKeys.map { k -> parseOrLookupKeyPairAndValidate(k!!)}.toTypedArray() }
     fun run() {
         try {
             if (args.verbose) {
@@ -68,6 +69,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
     }
 
     fun parseOrLookupKeyPair(str: String) = parseKeyPair(args.keyProperties[str]?.toString()) ?: parseKeyPair(str)
+    fun parseOrLookupKeyPairAndValidate(str: String) = parseKeyPair(args.keyProperties[str]?.toString()) ?: parseKeyPair(str) ?: throw SystemExitException("invalid account $str",1)
 
     fun save(properties: Properties, fileName: String) {
         properties.store(FileOutputStream(File(fileName)), "assetcode -> issue address")
