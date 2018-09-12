@@ -17,6 +17,7 @@ import org.stellar.sdk.responses.describe
 import org.stellar.sdk.seedString
 import org.stellar.sdk.xdr.OperationType
 import org.stellar.sdk.xdr.TransactionEnvelope
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
 import java.util.Locale
@@ -195,6 +196,7 @@ private val doPreparePaymentTX: CommandFunction = { context ->
             TokenAmount.of(amount),
             context.asset(assetCode)
         )
+        println("Transaction envelope xdr:")
         println("tx hash: $hash")
         println("tx envelope xdr: $xdr")
     }
@@ -211,6 +213,7 @@ private val doSignTx: CommandFunction = { context ->
             tx.sign(it)
         }
         println("Transaction envelope xdr:")
+        println(tx.hash().toString(StandardCharsets.UTF_8))
         println(tx.toEnvelopeXdrBase64())
     }
 }
