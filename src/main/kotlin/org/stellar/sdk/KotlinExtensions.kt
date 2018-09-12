@@ -99,7 +99,7 @@ fun Asset.amount(value: String): TokenAmount {
     return tokenAmount(value, this)
 }
 
-fun Asset.amount(tokens: Long, stroops: Long=0): TokenAmount {
+fun Asset.amount(tokens: Long, stroops: Long = 0): TokenAmount {
     return tokenAmount(tokens, stroops, this)
 }
 

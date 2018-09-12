@@ -4,7 +4,6 @@ import com.google.common.math.LongMath
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.assetCode
-import sun.management.snmp.jvminstr.JvmThreadInstanceEntryImpl
 import java.math.BigDecimal
 import java.math.MathContext
 import java.util.Locale
@@ -16,7 +15,7 @@ fun tokenAmount(amount: Double, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(amount, asset)
 }
 
-fun tokenAmount(tokens: Long, stroops: Long=0, asset: Asset? = null): TokenAmount {
+fun tokenAmount(tokens: Long, stroops: Long = 0, asset: Asset? = null): TokenAmount {
     return TokenAmount.of(tokens, stroops, asset)
 }
 
@@ -28,7 +27,6 @@ fun tokenAmount(tokens: String, asset: Asset? = null): TokenAmount {
 Represents amounts in Stellar. Stellar uses 64 bit longs to store values. To fake decimals, they use stroops, wich is
  */
 data class TokenAmount private constructor(val tokens: Long, val stroops: Long, val asset: Asset?) {
-
     val totalStroops by lazy { tokens * stroopsPerToken + stroops }
 
     val bigDecimalValue by lazy { BigDecimal.valueOf(tokens) + BigDecimal.valueOf(stroops). times(BigDecimal.valueOf(1).divide(BigDecimal.valueOf(
@@ -59,53 +57,47 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
     }
 
     operator fun compareTo(other: TokenAmount): Int {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("$other.asset asset does not match ${this.asset} ")
         return totalStroops.compareTo(other.totalStroops)
     }
 
     operator fun plus(other: TokenAmount): TokenAmount {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("$other.asset asset does not match ${this.asset} ")
-        return ofStroops(this.totalStroops + other.totalStroops,this.asset)
+        return ofStroops(this.totalStroops + other.totalStroops, if (hasSameAsset(other)) this.asset else null)
     }
 
     operator fun minus(other: TokenAmount): TokenAmount {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("$other.asset asset does not match ${this.asset} ")
-        return ofStroops(this.totalStroops - other.totalStroops,this.asset)
+        return ofStroops(this.totalStroops - other.totalStroops, if (hasSameAsset(other)) this.asset else null)
     }
 
     operator fun times(other: TokenAmount): TokenAmount {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("$other.asset asset does not match ${this.asset} ")
-        return of(this.bigDecimalValue.times(other.bigDecimalValue).toDouble(),this.asset)
+        return of(this.bigDecimalValue.times(other.bigDecimalValue).toDouble(), if (hasSameAsset(other)) this.asset else null)
     }
 
     operator fun div(other: TokenAmount): TokenAmount {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("${JvmThreadInstanceEntryImpl.ThreadStateMap.Byte1.other}.asset asset does not match ${this.asset} ")
-        return of(this.bigDecimalValue.divide(other.bigDecimalValue).toDouble(),this.asset)
+        return of(this.bigDecimalValue.divide(other.bigDecimalValue).toDouble(), if (hasSameAsset(other)) this.asset else null)
     }
 
     operator fun rem(other: TokenAmount): TokenAmount {
-        if(!hasSameAsset(other)) throw IllegalArgumentException("${JvmThreadInstanceEntryImpl.ThreadStateMap.Byte1.other}.asset asset does not match ${this.asset} ")
-        return of(this.bigDecimalValue.remainder(other.bigDecimalValue).toDouble(),this.asset)
+        return of(this.bigDecimalValue.remainder(other.bigDecimalValue).toDouble(), if (hasSameAsset(other)) this.asset else null)
     }
 
-    fun hasSameAsset(other: TokenAmount): Boolean {
-        return (this.asset == null && other.asset==null) || (this.asset!=null && other.asset!=null && this.asset==other.asset)
+    private fun hasSameAsset(other: TokenAmount): Boolean {
+        return (this.asset == null && other.asset == null) || (this.asset != null && other.asset != null && this.asset == other.asset)
     }
 
     fun inverse(): TokenAmount {
         val inverse = stroopsPerToken.toBigDecimal()
             .divide(this.totalStroops.toBigDecimal(), MathContext.DECIMAL128).toDouble()
-        return TokenAmount.of(inverse,this.asset)
+        return TokenAmount.of(inverse, this.asset)
     }
 
     override fun equals(other: Any?): Boolean {
-        return if(other != null && other is TokenAmount) {
-            if(this.asset == null && other.asset == null) {
-                this.stroops==other.stroops
-            } else if(this.asset == null || other.asset == null) {
+        return if (other != null && other is TokenAmount) {
+            if (this.asset == null && other.asset == null) {
+                this.stroops == other.stroops
+            } else if (this.asset == null || other.asset == null) {
                 false
             } else {
-                this.stroops==other.stroops && this.asset==other.asset
+                this.stroops == other.stroops && this.asset == other.asset
             }
         } else {
             false
