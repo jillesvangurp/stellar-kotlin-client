@@ -40,12 +40,12 @@ fun AccountResponse.balanceMap(): Map<Asset, AccountResponse.Balance> {
 /**
  * Return the balance for a specific Asset.
  */
-fun AccountResponse.balanceFor(asset: Asset): TokenAmount {
+fun AccountResponse.balanceFor(asset: Asset): AccountResponse.Balance? {
     val balance = balanceMap()[asset]
     return if (balance != null) {
-        balance.tokenAmount()
+        balance
     } else {
-        tokenAmount(0, asset)
+        null
     }
 }
 

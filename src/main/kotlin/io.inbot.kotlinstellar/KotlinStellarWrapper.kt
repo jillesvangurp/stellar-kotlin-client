@@ -3,6 +3,7 @@ package io.inbot.kotlinstellar
 import mu.KotlinLogging
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
+import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.ChangeTrustOperation
 import org.stellar.sdk.CreateAccountOperation
 import org.stellar.sdk.CreatePassiveOfferOperation
@@ -23,9 +24,7 @@ import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger {}
 
-enum class StellarNetwork() {
-    public, testnet, standalone
-}
+val nativeXlmAsset = AssetTypeNative()
 
 /**
  * Helper that makes doing common operations against Stellar less boiler plate heavy.
@@ -226,7 +225,7 @@ class KotlinStellarWrapper(
                 account,
                 offerResponse,
                 sell.amount,
-                (forAtLeast /   sell).amount,
+                (forAtLeast / sell).amount,
                 maxTries,
                 signers = signers
             )
@@ -290,7 +289,7 @@ class KotlinStellarWrapper(
         sender: KeyPair,
         receiver: KeyPair,
         amount: TokenAmount,
-        asset: Asset,
+        asset: Asset = amount.asset ?: nativeXlmAsset,
         memo: String? = null,
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(sender)
@@ -298,7 +297,7 @@ class KotlinStellarWrapper(
         return server.doTransaction(sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (StringUtils.isNotBlank(memo)) {
-                if(memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
+                if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
                     throw IllegalStateException("Memo exceeds limit of 28 bytes")
                 }
                 addMemo(Memo.text(memo))
@@ -306,26 +305,28 @@ class KotlinStellarWrapper(
         }
     }
 
+    data class PreparedTransaction(val transactionHash: String, val transactionEnvelopeXdr: String)
+
     fun preparePaymentTransaction(
         sender: KeyPair,
         receiver: KeyPair,
         amount: TokenAmount,
-        asset: Asset,
+        asset: Asset = amount.asset ?: nativeXlmAsset,
         memo: String? = null
-    ): Pair<String, String> {
+    ): PreparedTransaction {
         val txBuilder = Transaction.Builder(server.accounts().account(sender))
             .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
-        if(StringUtils.isNotBlank(memo)) {
-            if(memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
+        if (StringUtils.isNotBlank(memo)) {
+            if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
                 throw IllegalStateException("Memo exceeds limit of 28 bytes")
             }
             txBuilder.addMemo(Memo.text(memo))
         }
-        val tx= txBuilder.build()
+        val tx = txBuilder.build()
         println("Transaction envelope xdr:")
         val transactionEnvelope = TransactionEnvelope()
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
-        return Pair(tx.hash().toString(StandardCharsets.UTF_8),xdrEncode(transactionEnvelope))
+        return PreparedTransaction(tx.hash().toString(StandardCharsets.UTF_8), xdrEncode(transactionEnvelope))
     }
 }

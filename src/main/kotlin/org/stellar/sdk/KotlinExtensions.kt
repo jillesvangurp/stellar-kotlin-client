@@ -1,5 +1,7 @@
 package org.stellar.sdk
 
+import io.inbot.kotlinstellar.TokenAmount
+import io.inbot.kotlinstellar.tokenAmount
 import mu.KotlinLogging
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.Validate
@@ -88,6 +90,18 @@ val Asset.assetCode: String
             "XLM"
         }
     }
+
+fun Asset.amount(value: Double): TokenAmount {
+    return tokenAmount(value, this)
+}
+
+fun Asset.amount(value: String): TokenAmount {
+    return tokenAmount(value, this)
+}
+
+fun Asset.amount(tokens: Long, stroops: Long=0): TokenAmount {
+    return tokenAmount(tokens, stroops, this)
+}
 
 fun Server.prepareTransaction(forAccount: KeyPair, transactionBlock: (Transaction.Builder).() -> Unit): Transaction {
     val builder = Transaction.Builder(accounts().account(forAccount))

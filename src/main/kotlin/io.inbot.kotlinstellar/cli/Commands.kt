@@ -260,7 +260,6 @@ private val doSubmitTx: CommandFunction = { context ->
             )
         }
     }
-
 }
 
 class SetOptionsArgs(parser: ArgParser) {

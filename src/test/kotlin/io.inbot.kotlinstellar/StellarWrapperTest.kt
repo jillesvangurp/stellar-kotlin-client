@@ -3,7 +3,9 @@ package io.inbot.ethclient.stellar
 import com.google.common.math.LongMath
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.TokenAmount
+import io.inbot.kotlinstellar.nativeXlmAsset
 import io.inbot.kotlinstellar.tokenAmount
+import io.inbot.kotlinstellar.xdrDecodeString
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -17,15 +19,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.stellar.sdk.Asset
-import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
+import org.stellar.sdk.Transaction
+import org.stellar.sdk.amount
 import org.stellar.sdk.findAccount
 import org.stellar.sdk.requests.ErrorResponse
 import org.stellar.sdk.responses.balanceAmount
 import org.stellar.sdk.responses.balanceFor
+import org.stellar.sdk.responses.describe
 import org.stellar.sdk.responses.getTransactionResult
+import org.stellar.sdk.responses.tokenAmount
 import org.stellar.sdk.toPublicPair
+import org.stellar.sdk.xdr.TransactionEnvelope
+import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger { }
 
@@ -34,7 +41,6 @@ val sourcePair = KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVP
 val issuerPair = KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
 val distributionPair = KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
 val bpt = Asset.createNonNativeAsset("bpt", issuerPair.toPublicPair())
-val native = AssetTypeNative()
 
 val tokenCap = TokenAmount.of(LongMath.pow(10, 10), 0)
 
@@ -116,7 +122,7 @@ class StellarWrapperTest {
 
         wrapper.trustAsset(anotherAccount, bpt, TokenAmount.of(100.0))
         wrapper.pay(distributionPair, anotherAccount, TokenAmount.of(2.0), bpt)
-        server.accounts().account(anotherAccount).balanceFor(bpt).amount shouldBe tokenAmount(2.0).amount
+        server.accounts().account(anotherAccount).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(2.0).amount
     }
 
     @Test
@@ -147,38 +153,38 @@ class StellarWrapperTest {
         wrapper.trustAsset(theBuyer, bpt, tokenCap)
 
         wrapper.placeOffer(distributionPair,
-            tokenAmount(500, bpt),
-            tokenAmount(1000, native)
+            tokenAmount(500.0, bpt),
+            tokenAmount(1000.0, nativeXlmAsset)
         )
         wrapper.placeOffer(theBuyer,
-            tokenAmount(10, native),
-            tokenAmount(5, bpt)
+            tokenAmount(10.0, nativeXlmAsset),
+            tokenAmount(5.0, bpt)
         )
 
         val distAccount = server.accounts().account(distributionPair)
         val buyerAccount = server.accounts().account(theBuyer)
         val bptAmountAfterFirstOffer = buyerAccount.balanceFor(bpt)
-        bptAmountAfterFirstOffer.amount shouldBe tokenAmount(5).amount
-        println("distribution has $bptAmountAfterFirstOffer ${distAccount.balanceFor(native)}")
-        println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(native)}")
+        bptAmountAfterFirstOffer?.balanceAmount()?.amount shouldBe tokenAmount(5).amount
+        println("distribution has $bptAmountAfterFirstOffer ${distAccount.balanceFor(nativeXlmAsset)}")
+        println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(nativeXlmAsset)}")
 
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
 
         // lets be unreasonable
         wrapper.placeOffer(theBuyer,
-            tokenAmount(10, native),
-            tokenAmount(50, bpt)
+            tokenAmount(10, 0,nativeXlmAsset),
+            tokenAmount(50,0, bpt)
         )
         server.offers().forAccount(theBuyer).execute().records.size shouldBe 1
         // the offer will not be fulfilled
-        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(5).amount
+        server.accounts().account(theBuyer).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(5).amount
         // try again at a more reasonable rate
         wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0],
-            tokenAmount(10, native),
-            tokenAmount(1, bpt)
+            tokenAmount(10, 0,nativeXlmAsset),
+            tokenAmount(1, 0,bpt)
         )
 
-        server.accounts().account(theBuyer).balanceFor(bpt).amount shouldBe tokenAmount(10).amount // you get more than you bargained for
+        server.accounts().account(theBuyer).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(10).amount // you get more than you bargained for
 
         // clean up
         wrapper.deleteOffers(theBuyer)
@@ -210,7 +216,7 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(account, s1, tokenAmount(1.0), native)
+        wrapper.pay(account, s1, tokenAmount(1.0), nativeXlmAsset)
 
         wrapper.setAccountOptions(account) {
             setSigner(s1.xdrSignerKey, 2)
@@ -237,18 +243,18 @@ class StellarWrapperTest {
 
         printAccount(account)
 
-        wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s2, s3))
+        wrapper.pay(account, s1, tokenAmount(1.0), nativeXlmAsset, signers = arrayOf(s2, s3))
 
         assertThrows<Exception> {
             // too many signatures is a problem: https://github.com/stellar/stellar-core/issues/1692
-            wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s2, s3, s4))
+            wrapper.pay(account, s1, tokenAmount(1.0), nativeXlmAsset, signers = arrayOf(s2, s3, s4))
         }
 
         assertThrows<Exception> {
-            wrapper.pay(account, s1, tokenAmount(1.0), native, signers = arrayOf(s1))
+            wrapper.pay(account, s1, tokenAmount(1.0), nativeXlmAsset, signers = arrayOf(s1))
         }
         assertThrows<Exception> {
-            wrapper.pay(account, s1, tokenAmount(1.0), native)
+            wrapper.pay(account, s1, tokenAmount(1.0), nativeXlmAsset)
         }
     }
 
@@ -265,10 +271,29 @@ class StellarWrapperTest {
         )
     }
 
-//    fun `pre-authorized payments`() {
-//        val alice = wrapper.createAccount(tokenAmount(100))
-//        val bob = wrapper.createAccount(tokenAmount(30))
-//
-//
-//    }
+    @Test
+    fun `pre-authorized payments`() {
+        val alice = wrapper.createAccount(tokenAmount(100))
+        val bob = wrapper.createAccount(tokenAmount(30))
+
+        val (hash,xdr) = wrapper.preparePaymentTransaction(alice, bob, tokenAmount(10.0))
+
+        val envelope = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        envelope.sign(hash.toByteArray(StandardCharsets.UTF_8))
+        envelope.sign(alice)
+        wrapper.server.submitTransaction(envelope)
+
+        // pre authorized transaction; has not been payed yet; cashable by bob
+        wrapper.server.accounts().account(bob).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(30.0)
+
+        wrapper.pay(alice,bob, nativeXlmAsset.amount(5))
+
+        println(wrapper.server.accounts().account(alice).describe())
+
+        val bobsTransaction = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        bobsTransaction.sign(bob)
+        wrapper.server.submitTransaction(bobsTransaction)
+
+        wrapper.server.accounts().account(bob).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(40.0)
+    }
 }
