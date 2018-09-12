@@ -17,10 +17,19 @@ import org.stellar.sdk.SetOptionsOperation
 import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.doTransaction
+import org.stellar.sdk.responses.AccountResponse
+import org.stellar.sdk.responses.AssetResponse
 import org.stellar.sdk.responses.OfferResponse
+import org.stellar.sdk.responses.Page
+import org.stellar.sdk.responses.Response
 import org.stellar.sdk.responses.SubmitTransactionResponse
+import org.stellar.sdk.responses.TransactionResponse
+import org.stellar.sdk.responses.operations.OperationResponse
+import org.stellar.sdk.responses.operations.PaymentOperationResponse
 import org.stellar.sdk.xdr.TransactionEnvelope
+import shadow.okhttp3.OkHttpClient
 import java.nio.charset.StandardCharsets
+import kotlin.reflect.full.cast
 
 private val logger = KotlinLogging.logger {}
 
@@ -42,6 +51,7 @@ class KotlinStellarWrapper(
 ) {
 
     val network: Network?
+    val httpClient: OkHttpClient
 
     init {
         when (stellarNetwork) {
@@ -58,6 +68,7 @@ class KotlinStellarWrapper(
                 Network.usePublicNetwork()
             }
         }
+        httpClient = server.submitHttpClient
     }
 
     /**
@@ -323,10 +334,169 @@ class KotlinStellarWrapper(
             txBuilder.addMemo(Memo.text(memo))
         }
         val tx = txBuilder.build()
-        println("Transaction envelope xdr:")
         val transactionEnvelope = TransactionEnvelope()
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
         return PreparedTransaction(tx.hash().toString(StandardCharsets.UTF_8), xdrEncode(transactionEnvelope))
     }
+
+    private fun <T : Response> pageSequence(
+        cursorExtractorFunction: (T) -> String,
+        nextPageFunction: (String) -> Page<T>,
+        cursor: String,
+        fetchSize: Int,
+        endless: Boolean,
+        pollingIntervalMs: Long
+    ): Sequence<Page<T>> {
+        var last = cursor
+        var catchingUp = true
+        return generateSequence {
+            if (!catchingUp) {
+                Thread.sleep(pollingIntervalMs)
+            }
+            var page = nextPageFunction.invoke(last)
+            // make sure we don't return an empty page because that will kill the sequence
+            while (page.records.size == 0 && endless) {
+                if (!catchingUp) {
+                    Thread.sleep(pollingIntervalMs)
+                }
+                page = nextPageFunction.invoke(last)
+            }
+
+            // we need this because pagingToken is not part of the Response API for some reason
+            last = cursorExtractorFunction.invoke(page.records.last())
+            if (catchingUp && page.records.size == 0) {
+                catchingUp = false;
+            }
+            page
+        }
+    }
+
+    fun accountsSequence(
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+
+    ): Sequence<AccountResponse> {
+        val fetch = { c: String ->
+            val builder = server.accounts()
+            builder.cursor(c).limit(fetchSize).execute()
+        }
+
+        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+            .flatMap { it.records.asSequence() }
+    }
+
+    fun offersSequence(
+        account: KeyPair?=null,
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+
+    ): Sequence<OfferResponse> {
+        val fetch = { c: String ->
+            val builder = server.offers()
+            if(account != null) builder.forAccount(account)
+            builder.cursor(c).limit(fetchSize).execute()
+        }
+
+        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+            .flatMap { it.records.asSequence() }
+    }
+
+    fun operationsSequence(
+        account: KeyPair?=null,
+        ledger: Long?=null,
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+
+    ): Sequence<OperationResponse> {
+        val fetch = { c: String ->
+            val builder = server.operations()
+            if(account != null) builder.forAccount(account)
+            if(ledger!=null) builder.forLedger(ledger)
+
+            builder.cursor(c).limit(fetchSize).execute()
+        }
+
+        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+            .flatMap { it.records.asSequence() }
+    }
+
+    fun transactionsSequence(
+        account: KeyPair?=null,
+        ledger: Long?=null,
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+
+    ): Sequence<TransactionResponse> {
+        val fetch = { c: String ->
+            val builder = server.transactions()
+            if(account!=null) builder.forAccount(account)
+            if(ledger!=null) builder.forLedger(ledger)
+            builder.cursor(c).limit(fetchSize).execute()
+        }
+
+        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+            .flatMap { it.records.asSequence() }
+    }
+
+    fun assetsSequence(
+        assetIssuer: String?=null,
+        assetCode: String?=null,
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+
+    ): Sequence<AssetResponse> {
+        val fetch = { c: String ->
+            val builder = server.assets()
+
+            if(assetIssuer != null) builder.assetIssuer(assetIssuer)
+            if(assetCode != null) builder.assetCode(assetCode)
+            builder.cursor(c).limit(fetchSize)
+
+            builder.execute()
+        }
+
+        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+            .flatMap { it.records.asSequence() }
+    }
+
+    fun paymentSequence(
+        account: KeyPair? = null,
+        ledger: Long?=null,
+        transactionId: String?,
+        cursor: String = "now",
+        fetchSize: Int = 10,
+        endless: Boolean = false,
+        pollingIntervalMs: Long = 5000
+    ): Sequence<PaymentOperationResponse> {
+
+        val fetchPageFunction = { c: String ->
+            val builder = server.payments()
+            if (account != null)  builder.forAccount(account)
+            if(ledger!=null) builder.forLedger(ledger)
+            if(transactionId != null) builder.forTransaction(transactionId)
+            var page = builder.limit(fetchSize).cursor(c).execute()
+            page
+        }
+        val pageSequence = pageSequence<OperationResponse>(
+            { it -> it.pagingToken }, fetchPageFunction,
+            cursor, fetchSize, endless, pollingIntervalMs
+        )
+
+        return pageSequence.flatMap { it.records.asSequence() }
+            // filter out anything that isn't a payment (account creation is included for some reason)
+            .filter { it is PaymentOperationResponse }
+            .map { PaymentOperationResponse::class.cast(it) }
+    }
+
 }
