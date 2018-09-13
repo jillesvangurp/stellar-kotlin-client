@@ -344,7 +344,6 @@ class KotlinStellarWrapper(
         cursorExtractorFunction: (T) -> String,
         nextPageFunction: (String) -> Page<T>,
         cursor: String,
-        fetchSize: Int,
         endless: Boolean,
         pollingIntervalMs: Long
     ): Sequence<Page<T>> {
@@ -366,7 +365,7 @@ class KotlinStellarWrapper(
             // we need this because pagingToken is not part of the Response API for some reason
             last = cursorExtractorFunction.invoke(page.records.last())
             if (catchingUp && page.records.size == 0) {
-                catchingUp = false;
+                catchingUp = false
             }
             page
         }
@@ -384,12 +383,12 @@ class KotlinStellarWrapper(
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
             .flatMap { it.records.asSequence() }
     }
 
     fun offersSequence(
-        account: KeyPair?=null,
+        account: KeyPair? = null,
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
@@ -398,17 +397,17 @@ class KotlinStellarWrapper(
     ): Sequence<OfferResponse> {
         val fetch = { c: String ->
             val builder = server.offers()
-            if(account != null) builder.forAccount(account)
+            if (account != null) builder.forAccount(account)
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
             .flatMap { it.records.asSequence() }
     }
 
     fun operationsSequence(
-        account: KeyPair?=null,
-        ledger: Long?=null,
+        account: KeyPair? = null,
+        ledger: Long? = null,
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
@@ -417,19 +416,19 @@ class KotlinStellarWrapper(
     ): Sequence<OperationResponse> {
         val fetch = { c: String ->
             val builder = server.operations()
-            if(account != null) builder.forAccount(account)
-            if(ledger!=null) builder.forLedger(ledger)
+            if (account != null) builder.forAccount(account)
+            if (ledger != null) builder.forLedger(ledger)
 
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
             .flatMap { it.records.asSequence() }
     }
 
     fun transactionsSequence(
-        account: KeyPair?=null,
-        ledger: Long?=null,
+        account: KeyPair? = null,
+        ledger: Long? = null,
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
@@ -438,18 +437,18 @@ class KotlinStellarWrapper(
     ): Sequence<TransactionResponse> {
         val fetch = { c: String ->
             val builder = server.transactions()
-            if(account!=null) builder.forAccount(account)
-            if(ledger!=null) builder.forLedger(ledger)
+            if (account != null) builder.forAccount(account)
+            if (ledger != null) builder.forLedger(ledger)
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
             .flatMap { it.records.asSequence() }
     }
 
     fun assetsSequence(
-        assetIssuer: String?=null,
-        assetCode: String?=null,
+        assetIssuer: String? = null,
+        assetCode: String? = null,
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
@@ -459,21 +458,21 @@ class KotlinStellarWrapper(
         val fetch = { c: String ->
             val builder = server.assets()
 
-            if(assetIssuer != null) builder.assetIssuer(assetIssuer)
-            if(assetCode != null) builder.assetCode(assetCode)
+            if (assetIssuer != null) builder.assetIssuer(assetIssuer)
+            if (assetCode != null) builder.assetCode(assetCode)
             builder.cursor(c).limit(fetchSize)
 
             builder.execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch,cursor,fetchSize,endless,pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
             .flatMap { it.records.asSequence() }
     }
 
     fun paymentSequence(
         account: KeyPair? = null,
-        ledger: Long?=null,
-        transactionId: String?,
+        ledger: Long? = null,
+        transactionId: String? = null,
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
@@ -482,15 +481,15 @@ class KotlinStellarWrapper(
 
         val fetchPageFunction = { c: String ->
             val builder = server.payments()
-            if (account != null)  builder.forAccount(account)
-            if(ledger!=null) builder.forLedger(ledger)
-            if(transactionId != null) builder.forTransaction(transactionId)
+            if (account != null) builder.forAccount(account)
+            if (ledger != null) builder.forLedger(ledger)
+            if (transactionId != null) builder.forTransaction(transactionId)
             var page = builder.limit(fetchSize).cursor(c).execute()
             page
         }
         val pageSequence = pageSequence<OperationResponse>(
             { it -> it.pagingToken }, fetchPageFunction,
-            cursor, fetchSize, endless, pollingIntervalMs
+            cursor, endless, pollingIntervalMs
         )
 
         return pageSequence.flatMap { it.records.asSequence() }
@@ -498,5 +497,4 @@ class KotlinStellarWrapper(
             .filter { it is PaymentOperationResponse }
             .map { PaymentOperationResponse::class.cast(it) }
     }
-
 }
