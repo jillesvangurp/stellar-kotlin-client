@@ -68,7 +68,8 @@ You can configure cliste using two environment variables
 Additionally, cliste uses two properties files that you can manage with cliste commands:
 
 - `keys.properties`: a map of key alias to key. You can use either public or private key here. For any argument that takes a key in cliste you can also use the alias. When you do a `cliste createAccount` it will get saved here. You can also use `cliste defineKey` and `cliste listKeys`
-- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage""",
+- `assets.properties`: a map of asset code to issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage
+""",
                     120
                 )
             )
@@ -304,6 +305,13 @@ private val doSetOptions: CommandFunction = { context ->
     }
 }
 
+private val doListAllAssets: CommandFunction = {context ->
+    println("code\tissuer\tamount\tnumber_of_accounts")
+    context.wrapper.assetsSequence().forEach {
+        println("${it.assetCode}\t${it.assetIssuer}\t${it.amount}\t${it.numAccounts}")
+    }
+}
+
 enum class Commands(
     val command: CommandFunction,
     val clazz: KClass<*> = NoArgs::class,
@@ -347,7 +355,8 @@ enum class Commands(
         requiresAccount = false
     ),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
-    setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account    "),
+    setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
+    listAssetsOnStellar(doListAllAssets,NoArgs::class,"lists all assets on stellar",false),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

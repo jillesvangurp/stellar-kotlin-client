@@ -347,27 +347,31 @@ class KotlinStellarWrapper(
         endless: Boolean,
         pollingIntervalMs: Long
     ): Sequence<Page<T>> {
-        var last = cursor
+        var currentCursor = cursor
         var catchingUp = true
         return generateSequence {
             if (!catchingUp) {
                 Thread.sleep(pollingIntervalMs)
             }
-            var page = nextPageFunction.invoke(last)
+            var page = nextPageFunction.invoke(currentCursor)
             // make sure we don't return an empty page because that will kill the sequence
             while (page.records.size == 0 && endless) {
                 if (!catchingUp) {
                     Thread.sleep(pollingIntervalMs)
                 }
-                page = nextPageFunction.invoke(last)
+                page = nextPageFunction.invoke(currentCursor)
             }
 
             // we need this because pagingToken is not part of the Response API for some reason
-            last = cursorExtractorFunction.invoke(page.records.last())
             if (catchingUp && page.records.size == 0) {
                 catchingUp = false
             }
-            page
+            if(page.records.size == 0) {
+                null
+            } else {
+                currentCursor = cursorExtractorFunction.invoke(page.records.last())
+                page
+            }
         }
     }
 
@@ -450,7 +454,7 @@ class KotlinStellarWrapper(
         assetIssuer: String? = null,
         assetCode: String? = null,
         cursor: String = "now",
-        fetchSize: Int = 10,
+        fetchSize: Int = 200,
         endless: Boolean = false,
         pollingIntervalMs: Long = 5000
 

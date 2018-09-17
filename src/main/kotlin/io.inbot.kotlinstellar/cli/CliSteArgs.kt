@@ -29,7 +29,7 @@ class CliSteArgs(parser: ArgParser) {
 
     val horizonUrl by parser.storing(
         "-u", "--horizon-url",
-        help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty"
+        help = "URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or $defaultUrl if that is empty. If you are planning to run lots of commands against stellar, you should consider setting up your own horizon server to avoid rate limiting on the public endpoints."
     ).default(System.getenv("ST_HORIZON_URL") ?: defaultUrl)
 
     val assetPropertiesFileName by parser.storing(
@@ -59,7 +59,7 @@ class CliSteArgs(parser: ArgParser) {
         }
         props
     }
-    val standAloneNetworkPassphrase by parser.storing("network password").default("Standalone Network ; February 2017")
+    val standAloneNetworkPassphrase by parser.storing("network password. You can leave this blank for testnet or public. It defaults to the passphrase for the standalone network you get with the quickstart docker image.").default("Standalone Network ; February 2017")
     val stellarNetwork by parser.storing("--stellar-network", help = "", transform = {
         try {
             StellarNetwork.valueOf(this)

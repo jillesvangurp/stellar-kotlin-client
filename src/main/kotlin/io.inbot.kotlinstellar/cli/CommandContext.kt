@@ -58,9 +58,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
             }
             throw e
         } catch (e: Exception) {
-            if (args.verbose) {
-                e.printStackTrace()
-            }
+            e.printStackTrace()
             throw SystemExitException(
                 "Problem running '${args.commandName}'. ${e.message}", 1
             )
