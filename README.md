@@ -20,6 +20,13 @@ The plan is to keep on adding convenience methods.
 
 As part of this library, we also included a command line interface that you can use to interact with stellar.
 
+- create accounts
+- do payments, offers, multi signature payments
+- create your own assets
+- manage lists of accounts and assets
+- and more ...
+- works against standalone net, testnet, and public net. For the standalong net, it has support for generating accounts using the root key. No friendbot required.
+
 [CliSte Documentation](cliste.md)
 
 # Code Examples
