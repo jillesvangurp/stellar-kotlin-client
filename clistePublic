@@ -1,0 +1,4 @@
+#! /bin/bash
+export CLISTE_ARGS='--stellar-network public --horizon-url https://horizon.stellar.org/ --key-properties public-keys.properties --asset-properties=public-assets.properties'
+
+./cliste $*
