@@ -120,7 +120,7 @@ private val doListKeys: CommandFunction = {
     println("Defined keys (${it.args.keyProperties.size}):")
     it.args.keyProperties.forEach { p ->
         val keyPair = parseKeyPair(p.value.toString())
-        println("${p.key}: secretKey ${if(keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(0, 6) else "-"}.... accountId: ${keyPair?.accountId}")
+        println("${p.key}: secretKey ${if(keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(0, 6) + "...." else "-"} accountId: ${keyPair?.accountId}")
     }
 }
 
