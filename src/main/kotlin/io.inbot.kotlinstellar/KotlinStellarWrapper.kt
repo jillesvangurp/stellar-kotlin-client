@@ -29,6 +29,7 @@ import org.stellar.sdk.responses.operations.PaymentOperationResponse
 import org.stellar.sdk.xdr.TransactionEnvelope
 import shadow.okhttp3.OkHttpClient
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import kotlin.reflect.full.cast
 
 private val logger = KotlinLogging.logger {}
@@ -337,7 +338,8 @@ class KotlinStellarWrapper(
         val transactionEnvelope = TransactionEnvelope()
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
-        return PreparedTransaction(tx.hash().toString(StandardCharsets.UTF_8), xdrEncode(transactionEnvelope))
+
+        return PreparedTransaction(Base64.getEncoder().encode(tx.hash()).toString(StandardCharsets.UTF_8), xdrEncode(transactionEnvelope))
     }
 
     private fun <T : Response> pageSequence(
