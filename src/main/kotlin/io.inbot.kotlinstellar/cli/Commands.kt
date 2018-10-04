@@ -157,7 +157,7 @@ private val doCreateAccount: CommandFunction = { context ->
 
 class TrustAssetArgs(parser: ArgParser) {
     val assetCode by parser.positional("Asset that you want to trust. Must be defined in assets.properties")
-    val amount by parser.positional("Amount you trust the asset with")
+    val amount by parser.positional("Amount you trust the asset with").default<String?>(null)
 }
 
 private val doTrustAsset: CommandFunction = { context ->
@@ -165,7 +165,7 @@ private val doTrustAsset: CommandFunction = { context ->
         context.wrapper.trustAsset(
             context.accountKeyPair,
             context.asset(assetCode),
-            TokenAmount.of(amount),
+            if(amount==null) TokenAmount.maxAmount else TokenAmount.of(amount!!),
             signers = context.signers
         )
     }
