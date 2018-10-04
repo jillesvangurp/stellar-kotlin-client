@@ -4,7 +4,7 @@ import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.tokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
 import org.stellar.sdk.Asset
-import org.stellar.sdk.assetCode
+import org.stellar.sdk.describe
 import org.stellar.sdk.xdr.TransactionResult
 
 /**
@@ -21,7 +21,7 @@ authRequired: ${flags.authRequired}
 authRevocable: ${flags.authRevocable}
 
 Balances:
-${balances.map { "${it.asset.assetCode} b:${it.balance} l:${it.limit ?: "-"} - sl: ${it.sellingLiabilities ?: "-"} - bl: ${it.buyingLiabilities ?: "-"}" }
+${balances.map { "${it.asset.describe()} b:${it.balance} l:${it.limit ?: "-"} - sl: ${it.sellingLiabilities ?: "-"} - bl: ${it.buyingLiabilities ?: "-"}" }
         .joinToString("\n")}
 """.trimIndent()
 }
