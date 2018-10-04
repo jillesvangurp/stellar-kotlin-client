@@ -130,7 +130,6 @@ class CreateAccountArgs(parser: ArgParser) {
 }
 
 private val doCreateAccount: CommandFunction = { context ->
-
     withArgs<CreateAccountArgs>(context.commandArgs) {
         val signers: Array<KeyPair>
         if (context.hasAccountKeyPair) {
@@ -139,14 +138,20 @@ private val doCreateAccount: CommandFunction = { context ->
             signers = arrayOf(context.wrapper.rootKeyPair)
         }
         // if no pair, it will try to bootstrap a pair
+        val existingKeyPair = context.parseOrLookupKeyPair(name)
         val created = context.wrapper.createAccount(
             TokenAmount.of(amount),
             sourceAccount = if (context.hasAccountKeyPair) context.accountKeyPair else null,
+            newAccount = existingKeyPair ?: KeyPair.random(),
             signers = signers
         )
-        println("created account with secret key ${String(created.secretSeed)}")
-        context.args.keyProperties.put(name, String(created.secretSeed))
-        context.save(context.args.keyProperties, context.args.keyPropertiesFileName)
+        if(existingKeyPair == null) {
+            println("created account with secret key ${String(created.secretSeed)}")
+            context.args.keyProperties.put(name, String(created.secretSeed))
+            context.save(context.args.keyProperties, context.args.keyPropertiesFileName)
+        } else {
+            println("funded ${existingKeyPair.accountId} with $amount XLM")
+        }
     }
 }
 
