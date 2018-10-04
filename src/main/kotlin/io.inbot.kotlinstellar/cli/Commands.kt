@@ -120,7 +120,7 @@ private val doListKeys: CommandFunction = {
     println("Defined keys (${it.args.keyProperties.size}):")
     it.args.keyProperties.forEach { p ->
         val keyPair = parseKeyPair(p.value.toString())
-        println("${p.key}: secretKey ${if(keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(0, 6) + "...." else "-"} accountId: ${keyPair?.accountId}")
+        println("${p.key}: secretKey ${if (keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(0, 6).toString() + "...." else "-"} accountId: ${keyPair?.accountId}")
     }
 }
 
@@ -305,7 +305,7 @@ private val doSetOptions: CommandFunction = { context ->
     }
 }
 
-private val doListAllAssets: CommandFunction = {context ->
+private val doListAllAssets: CommandFunction = { context ->
     println("code\tissuer\tamount\tnumber_of_accounts")
     context.wrapper.assetsSequence().forEach {
         println("${it.assetCode}\t${it.assetIssuer}\t${it.amount}\t${it.numAccounts}")
@@ -356,7 +356,7 @@ enum class Commands(
     ),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
-    listAssetsOnStellar(doListAllAssets,NoArgs::class,"lists all assets on stellar",false),
+    listAssetsOnStellar(doListAllAssets, NoArgs::class, "lists all assets on stellar", false),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

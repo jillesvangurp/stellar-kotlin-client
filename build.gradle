@@ -1,7 +1,7 @@
 buildscript {
     ext {
-        kotlinVersion = '1.2.70'
-        junitVersion = '5.3.0'
+        kotlinVersion = '1.2.71'
+        junitVersion = '5.3.1'
     }
     repositories {
         jcenter()
@@ -9,10 +9,10 @@ buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:0.9.17"
-        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.8.7"
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.8.8"
         classpath 'com.github.ben-manes:gradle-versions-plugin:0.20.0' // gradle dependencyUpdates -Drevision=release
-        classpath "de.thetaphi:forbiddenapis:2.5"
-        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.14.0'
+        classpath "de.thetaphi:forbiddenapis:2.6"
+        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.15.0'
     }
 }
 
@@ -144,14 +144,14 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.25.3'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.26.1'
     compile "io.github.microutils:kotlin-logging:1.6.10"
     compile 'com.google.guava:guava-testlib:26.0-jre'
     compile group: 'com.xenomachina', name: 'kotlin-argparser', version: '2.0.7'
 
 
     // FIXME switch to official release once our PR for shading is included
-    compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-8'
+    compile 'com.github.Inbot:java-stellar-sdk:v0.3.2.1-inbot-shaded-9'
     compile "org.apache.commons:commons-lang3:3.8"
     compile 'org.apache.commons:commons-text:1.4'
     implementation "ch.qos.logback:logback-classic:1.2.3"
@@ -165,6 +165,6 @@ dependencies {
     testCompile "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
     testCompile "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 
-    testCompile "io.mockk:mockk:1.8.7"
-    testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.9'
+    testCompile "io.mockk:mockk:1.8.9"
+    testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.10'
 }

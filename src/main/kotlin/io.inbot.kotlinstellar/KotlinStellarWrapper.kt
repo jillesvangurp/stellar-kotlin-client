@@ -368,7 +368,7 @@ class KotlinStellarWrapper(
             if (catchingUp && page.records.size == 0) {
                 catchingUp = false
             }
-            if(page.records.size == 0) {
+            if (page.records.size == 0) {
                 null
             } else {
                 currentCursor = cursorExtractorFunction.invoke(page.records.last())
