@@ -91,6 +91,18 @@ val Asset.assetCode: String
         }
     }
 
+val Asset.assetIssuer: String
+    get() {
+        return (this as AssetTypeCreditAlphaNum).issuer.accountId
+    }
+
+fun Asset.describe(): String {
+    return when(this) {
+        is AssetTypeNative -> "XLM"
+        else -> "$assetCode ($assetIssuer)"
+    }
+}
+
 fun Asset.amount(value: Double): TokenAmount {
     return tokenAmount(value, this)
 }
