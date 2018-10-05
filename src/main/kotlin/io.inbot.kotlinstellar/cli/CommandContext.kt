@@ -68,7 +68,6 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
     fun parseOrLookupKeyPair(str: String) = parseKeyPair(args.keyProperties[str]?.toString()) ?: parseKeyPair(str)
     fun parseOrLookupKeyPairAndValidate(str: String) = parseKeyPair(args.keyProperties[str]?.toString()) ?: parseKeyPair(str) ?: throw SystemExitException("invalid account $str", 1)
 
-
     fun save(properties: Properties, fileName: String) {
         properties.store(FileOutputStream(File(fileName)), "assetcode -> issue address")
     }

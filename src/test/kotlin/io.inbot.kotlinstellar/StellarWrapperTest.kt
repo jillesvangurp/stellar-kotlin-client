@@ -142,9 +142,9 @@ class StellarWrapperTest {
 
         val a3NoTrust = wrapper.createAccount(TokenAmount.of(100.0))
 
-        shouldThrow<IllegalStateException> {
+        shouldThrow<IllegalArgumentException> {
             wrapper.pay(a2, a3NoTrust, TokenAmount.of(10.0), bpt)
-        }.message should (contain("op_no_trust"))
+        }.message should (contain("trust line"))
     }
 
     @Test

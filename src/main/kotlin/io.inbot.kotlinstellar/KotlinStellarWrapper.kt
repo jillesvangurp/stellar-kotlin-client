@@ -16,7 +16,11 @@ import org.stellar.sdk.Server
 import org.stellar.sdk.SetOptionsOperation
 import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
+import org.stellar.sdk.assetIssuer
+import org.stellar.sdk.describe
 import org.stellar.sdk.doTransaction
+import org.stellar.sdk.findAccount
+import org.stellar.sdk.isNative
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.AssetResponse
 import org.stellar.sdk.responses.OfferResponse
@@ -24,8 +28,10 @@ import org.stellar.sdk.responses.Page
 import org.stellar.sdk.responses.Response
 import org.stellar.sdk.responses.SubmitTransactionResponse
 import org.stellar.sdk.responses.TransactionResponse
+import org.stellar.sdk.responses.balanceFor
 import org.stellar.sdk.responses.operations.OperationResponse
 import org.stellar.sdk.responses.operations.PaymentOperationResponse
+import org.stellar.sdk.responses.tokenAmount
 import org.stellar.sdk.xdr.TransactionEnvelope
 import shadow.okhttp3.OkHttpClient
 import java.nio.charset.StandardCharsets
@@ -304,8 +310,15 @@ class KotlinStellarWrapper(
         asset: Asset = amount.asset ?: nativeXlmAsset,
         memo: String? = null,
         maxTries: Int = defaultMaxTries,
-        signers: Array<KeyPair> = arrayOf(sender)
+        signers: Array<KeyPair> = arrayOf(sender),
+        validate: Boolean = true
     ): SubmitTransactionResponse {
+        if (validate) {
+            val validationResponse = isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
+            if (!validationResponse.first) {
+                throw IllegalArgumentException("validation failure: ${validationResponse.second}")
+            }
+        }
         return server.doTransaction(sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (StringUtils.isNotBlank(memo)) {
@@ -324,8 +337,16 @@ class KotlinStellarWrapper(
         receiver: KeyPair,
         amount: TokenAmount,
         asset: Asset = amount.asset ?: nativeXlmAsset,
-        memo: String? = null
+        memo: String? = null,
+        validate: Boolean = true
     ): PreparedTransaction {
+        if (validate) {
+            val validationResponse = isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
+            if (!validationResponse.first) {
+                throw IllegalArgumentException("validation failure: ${validationResponse.second}")
+            }
+        }
+
         val txBuilder = Transaction.Builder(server.accounts().account(sender))
             .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
         if (StringUtils.isNotBlank(memo)) {
@@ -502,5 +523,35 @@ class KotlinStellarWrapper(
             // filter out anything that isn't a payment (account creation is included for some reason)
             .filter { it is PaymentOperationResponse }
             .map { PaymentOperationResponse::class.cast(it) }
+    }
+
+    fun isPaymentPossible(sender: KeyPair, receiver: KeyPair, tokenAmount: TokenAmount): Pair<Boolean, String> {
+        if (tokenAmount.asset == null) {
+            return false to "No asset specified on tokenAmount $tokenAmount"
+        }
+        val senderAccount = server.findAccount(sender)
+            ?: return false to "Sender ${sender.accountId} does not exist"
+
+        if (sender.accountId != tokenAmount.asset.assetIssuer || tokenAmount.asset.isNative()) {
+            // issuer should be able to issue and won't have a balance. The exception is native XLM.
+            val currentSenderBalance = senderAccount.balanceFor(tokenAmount.asset)
+                ?: return false to "Sender ${sender.accountId} does not have any ${tokenAmount.asset.describe()}"
+            if (currentSenderBalance.tokenAmount() < tokenAmount) {
+                return false to "Sender ${sender.accountId} does not have enough ${tokenAmount.asset.describe()} to transfer $tokenAmount. Current balance: ${currentSenderBalance.tokenAmount()}"
+            }
+        }
+
+        val receiverAccount = server.findAccount(receiver)
+            ?: return false to "Receiver ${receiver.accountId} does not exist"
+        if (!tokenAmount.asset.isNative()) {
+            val currentReceiverBalance = receiverAccount.balanceFor(tokenAmount.asset)
+                ?: return false to "Receiver ${receiver.accountId} does not have a trust line for ${tokenAmount.asset.describe()}"
+            val trustLineLimit = tokenAmount(currentReceiverBalance.limit)
+            if (trustLineLimit < tokenAmount) {
+                return false to "Receiver ${sender.accountId} trust line limit of $trustLineLimit is not enough to receive $tokenAmount."
+            }
+        }
+
+        return true to "OK"
     }
 }

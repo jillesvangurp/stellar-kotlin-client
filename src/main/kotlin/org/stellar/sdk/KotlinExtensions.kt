@@ -91,13 +91,17 @@ val Asset.assetCode: String
         }
     }
 
-val Asset.assetIssuer: String
+val Asset.assetIssuer: String?
     get() {
-        return (this as AssetTypeCreditAlphaNum).issuer.accountId
+        return if (this.isNative()) null else (this as AssetTypeCreditAlphaNum).issuer.accountId
     }
 
+fun Asset.isNative(): Boolean {
+    return this is AssetTypeNative
+}
+
 fun Asset.describe(): String {
-    return when(this) {
+    return when (this) {
         is AssetTypeNative -> "XLM"
         else -> "$assetCode ($assetIssuer)"
     }

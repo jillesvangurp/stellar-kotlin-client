@@ -145,7 +145,7 @@ private val doCreateAccount: CommandFunction = { context ->
             newAccount = existingKeyPair ?: KeyPair.random(),
             signers = signers
         )
-        if(existingKeyPair == null) {
+        if (existingKeyPair == null) {
             println("created account with secret key ${String(created.secretSeed)}")
             context.args.keyProperties.put(name, String(created.secretSeed))
             context.save(context.args.keyProperties, context.args.keyPropertiesFileName)
@@ -165,7 +165,7 @@ private val doTrustAsset: CommandFunction = { context ->
         context.wrapper.trustAsset(
             context.accountKeyPair,
             context.asset(assetCode),
-            if(amount==null) TokenAmount.maxAmount else TokenAmount.of(amount!!),
+            if (amount == null) TokenAmount.maxAmount else TokenAmount.of(amount!!),
             signers = context.signers
         )
     }
