@@ -21,12 +21,15 @@ import org.stellar.sdk.describe
 import org.stellar.sdk.doTransaction
 import org.stellar.sdk.findAccount
 import org.stellar.sdk.isNative
+import org.stellar.sdk.requests.RequestBuilder
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.AssetResponse
 import org.stellar.sdk.responses.OfferResponse
 import org.stellar.sdk.responses.Page
 import org.stellar.sdk.responses.Response
 import org.stellar.sdk.responses.SubmitTransactionResponse
+import org.stellar.sdk.responses.TradeAggregationResponse
+import org.stellar.sdk.responses.TradeResponse
 import org.stellar.sdk.responses.TransactionResponse
 import org.stellar.sdk.responses.balanceFor
 import org.stellar.sdk.responses.operations.OperationResponse
@@ -35,6 +38,7 @@ import org.stellar.sdk.responses.tokenAmount
 import org.stellar.sdk.xdr.TransactionEnvelope
 import shadow.okhttp3.OkHttpClient
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import java.util.Base64
 import kotlin.reflect.full.cast
 
@@ -554,4 +558,55 @@ class KotlinStellarWrapper(
 
         return true to "OK"
     }
+
+    fun trades(
+        baseAsset: Asset? = null,
+        counterAsset: Asset?=null,
+        offerId: String? = null,
+        account: KeyPair? = null,
+        cursor: String? = null,
+        limit: Int=20,
+        descending: Boolean=false
+    ): Sequence<TradeResponse> {
+        val builder = server.trades()
+        if(baseAsset != null) {
+            builder.baseAsset(baseAsset)
+        }
+        if(counterAsset != null) {
+            builder.counterAsset(counterAsset)
+        }
+        if(offerId != null) {
+            builder.offerId(offerId)
+        }
+        if(account != null) {
+            builder.forAccount(account)
+        }
+        if(cursor != null) {
+            builder.cursor(cursor)
+        }
+
+        builder.order(if(descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
+        builder.limit(limit)
+        return builder.execute().records.iterator().asSequence()
+    }
+
+    fun tradeAggs(
+        baseAsset: Asset,
+        counterAsset: Asset=nativeXlmAsset,
+        from: Instant,
+        to: Instant,
+        resolution: TradeAggregationResolution,
+        cursor: String? = null,
+        limit: Int=20,
+        descending: Boolean=false
+    ): Sequence<TradeAggregationResponse> {
+        val builder = server.tradeAggregations(baseAsset,counterAsset,from.toEpochMilli(),to.toEpochMilli(),resolution.resolution)
+        if(cursor != null) {
+            builder.cursor(cursor)
+        }
+        builder.order(if(descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
+        builder.limit(limit)
+        return builder.execute().records.iterator().asSequence()
+    }
+
 }
