@@ -368,7 +368,7 @@ private val doListTradeAggs: CommandFunction = { context ->
                 ?: throw InvalidArgumentException(
                     "Should be one of ${TradeAggregationResolution.validValues}")
         ).execute().records.forEach {
-            println("${it.date.toInstant()} O:${it.open} C:${it.close} ${it.baseVolume} $baseAsset to ${it.counterVolume} ${counterAsset} - L:${it.low} A:${it.avg} H:${it.high} ${it.tradeCount}")
+            println("${it.date.toInstant()} O:${it.open} C:${it.close} ${it.baseVolume} $baseAsset to ${it.counterVolume} ${counterAsset} - L:${it.low} A:${it.avg} H:${it.high} count:${it.tradeCount}")
 
         }
     }
