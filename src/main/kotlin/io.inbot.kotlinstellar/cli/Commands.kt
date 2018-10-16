@@ -1,9 +1,11 @@
 package io.inbot.kotlinstellar.cli
 
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.InvalidArgumentException
 import com.xenomachina.argparser.SystemExitException
 import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
+import io.inbot.kotlinstellar.TradeAggregationResolution
 import io.inbot.kotlinstellar.xdrDecodeString
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.text.WordUtils
@@ -325,13 +327,9 @@ private val doListAllAssets: CommandFunction = { context ->
 }
 
 class TradeArgs(parser: ArgParser) {
-    val fromTime: Long = System.currentTimeMillis() - 24*60*60*1000
-    val toTime: Long = System.currentTimeMillis()
-    val resolution: Long= 10*60*60
     val baseAsset by parser.positional("Base asset")
     val counterAsset by parser.positional("Counter asset")
 }
-
 
 private val doListTrades: CommandFunction = { context ->
     withArgs<TradeArgs>(context.commandArgs) {
@@ -342,7 +340,36 @@ private val doListTrades: CommandFunction = { context ->
         builder.order(RequestBuilder.Order.DESC).limit(199)
         val response = builder.execute()
         response.records.forEach {
-            println("${it.ledgerCloseTime} ${it.baseAccount.accountId} sold ${it.baseAmount} ${it.baseAsset.assetCode} for ${it.counterAmount} ${it.counterAsset.assetCode} to ${it.counterAccount.accountId} at ${it.price.numerator}/${it.price.denominator} (${it.price.numerator.toDouble()/it.price.denominator.toDouble()})")
+            println("${it.ledgerCloseTime} ${it.baseAccount.accountId} sold ${it.baseAmount} ${it.baseAsset.assetCode} for ${it.counterAmount} ${it.counterAsset.assetCode} to ${it.counterAccount.accountId} at ${it.price.numerator}/${it.price.denominator} (${it.price.numerator.toDouble() / it.price.denominator.toDouble()})")
+        }
+    }
+}
+
+
+class TradeAggsArgs(parser: ArgParser) {
+    val fromTime by parser.storing("--from", help = "From time in ms after epoch. Default to now-24h", transform = { toLong() })
+        .default<Long>(System.currentTimeMillis() - 60*60*1000*24)
+    val toTime by parser.storing("--to", help = "to time in ms after epoch. Default now", transform = { toLong() })
+        .default<Long>(System.currentTimeMillis())
+    val resolution by parser.storing("-r", "--resolution",help="resolution. One of ${TradeAggregationResolution.validValues}").default("1_HOURS")
+    val baseAsset by parser.positional("Base asset")
+    val counterAsset by parser.positional("Counter asset")
+}
+
+
+private val doListTradeAggs: CommandFunction = { context ->
+    withArgs<TradeAggsArgs>(context.commandArgs) {
+        context.server.tradeAggregations(
+            context.asset(baseAsset),
+            context.asset(counterAsset),
+            fromTime,
+            toTime,
+            TradeAggregationResolution.parse(resolution)?.resolution
+                ?: throw InvalidArgumentException(
+                    "Should be one of ${TradeAggregationResolution.validValues}")
+        ).execute().records.forEach {
+            println("${it.date.toInstant()} O:${it.open} C:${it.close} ${it.baseVolume} $baseAsset to ${it.counterVolume} ${counterAsset} - L:${it.low} A:${it.avg} H:${it.high} ${it.tradeCount}")
+
         }
     }
 }
@@ -390,6 +417,12 @@ enum class Commands(
         requiresAccount = false
     ),
     listTrades(doListTrades, TradeArgs::class, helpIntroduction = "List trades", requiresAccount = false),
+    listTradeAggs(
+        doListTradeAggs,
+        TradeAggsArgs::class,
+        helpIntroduction = "List trade aggregations",
+        requiresAccount = false
+    ),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
     listAssetsOnStellar(doListAllAssets, NoArgs::class, "lists all assets on stellar", false),
