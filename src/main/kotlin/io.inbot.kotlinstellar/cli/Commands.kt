@@ -13,6 +13,7 @@ import org.stellar.sdk.Operation
 import org.stellar.sdk.Transaction
 import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
+import org.stellar.sdk.requests.RequestBuilder
 import org.stellar.sdk.responses.describe
 import org.stellar.sdk.seedString
 import org.stellar.sdk.xdr.OperationType
@@ -120,7 +121,12 @@ private val doListKeys: CommandFunction = {
     println("Defined keys (${it.args.keyProperties.size}):")
     it.args.keyProperties.forEach { p ->
         val keyPair = parseKeyPair(p.value.toString())
-        println("${p.key}: secretKey ${if (keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(0, 6).toString() + "...." else "-"} accountId: ${keyPair?.accountId}")
+        println(
+            "${p.key}: secretKey ${if (keyPair?.canSign() ?: false) keyPair?.seedString()?.subSequence(
+                0,
+                6
+            ).toString() + "...." else "-"} accountId: ${keyPair?.accountId}"
+        )
     }
 }
 
@@ -244,13 +250,14 @@ private val doTxInfo: CommandFunction = { context ->
             .map { stringify(it) }
             .joinToString("\n")
 
-        println("""${tx.sequenceNumber} operations:
+        println(
+            """${tx.sequenceNumber} operations:
             |source account: ${tx.sourceAccount.accountId}
             |$ops
             |Signatures:
             |${tx.signatures.map {
-            Base64.getEncoder().encodeToString(it.signature.signature)
-        }.joinToString("\n")}""".trimMargin()
+                Base64.getEncoder().encodeToString(it.signature.signature)
+            }.joinToString("\n")}""".trimMargin()
         )
     }
 }
@@ -317,6 +324,29 @@ private val doListAllAssets: CommandFunction = { context ->
     }
 }
 
+class TradeArgs(parser: ArgParser) {
+    val fromTime: Long = System.currentTimeMillis() - 24*60*60*1000
+    val toTime: Long = System.currentTimeMillis()
+    val resolution: Long= 10*60*60
+    val baseAsset by parser.positional("Base asset")
+    val counterAsset by parser.positional("Counter asset")
+}
+
+
+private val doListTrades: CommandFunction = { context ->
+    withArgs<TradeArgs>(context.commandArgs) {
+        val builder = context.server.trades()
+            .baseAsset(context.asset(baseAsset))
+            .counterAsset(context.asset(counterAsset))
+
+        builder.order(RequestBuilder.Order.DESC).limit(199)
+        val response = builder.execute()
+        response.records.forEach {
+            println("${it.ledgerCloseTime} ${it.baseAccount.accountId} sold ${it.baseAmount} ${it.baseAsset.assetCode} for ${it.counterAmount} ${it.counterAsset.assetCode} to ${it.counterAccount.accountId} at ${it.price.numerator}/${it.price.denominator} (${it.price.numerator.toDouble()/it.price.denominator.toDouble()})")
+        }
+    }
+}
+
 enum class Commands(
     val command: CommandFunction,
     val clazz: KClass<*> = NoArgs::class,
@@ -359,6 +389,7 @@ enum class Commands(
         helpIntroduction = "Submit a transaction envelope in XDR form. You should add signatures first using signTx.",
         requiresAccount = false
     ),
+    listTrades(doListTrades, TradeArgs::class, helpIntroduction = "List trades", requiresAccount = false),
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
     listAssetsOnStellar(doListAllAssets, NoArgs::class, "lists all assets on stellar", false),
