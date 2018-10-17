@@ -13,60 +13,10 @@ gradle installDist
 
 [IntroductionToStellarUsingCliste](IntroductionToStellarUsingCliste.md)
 
-```
-$ ./cliste createAccount origin 10000
-12:54:05.866 [main] INFO io.inbot.kotlinstellar.KotlinStellarWrapper - using standalone network
-12:54:10.483 [main] INFO org.stellar.sdk.KotlinExtensions - 9 7b9883d947bcf6f9b7440e0da19b814375a6e48e47cca70ad6df4140ce94090a success:true fee:100 CREATE_ACCOUNT
-created account with secret key SDAYZTHTTLMLLY2F3DTSJ75CDQMZ7GF5RUXQEY4UOP2SCFW26Z2PFOSX
-
-$ ./cliste createAccount -k origin issuer 100
-12:54:25.419 [main] INFO org.stellar.sdk.KotlinExtensions - 12 c2cba0628eb963ff380ef5d287d7042b74f6fa884d9d94b818545cdc00f9bb29 success:true fee:100 CREATE_ACCOUNT
-created account with secret key SABA7F6PYZKB35QX2K5JKA7HQ5UYL5LDAEEBOJN57VMUYIQVDA647BDD
-
-$ ./cliste createAccount -k origin distributor 100
-12:54:40.399 [main] INFO org.stellar.sdk.KotlinExtensions - 15 1294811253f523381e48caa6efddf1df71b1b323e9ae97fe5d4859c484d0cc15 success:true fee:100 CREATE_ACCOUNT
-created account with secret key SBE4JHLLS2ZVKHJATHXDS276LUZGT6ORD2BZK37F3VBXMARSCHG7Q7EG
-
-$ ./cliste defineAsset issuer INTT
-$ ./cliste -k distributor trust INTT 100000
-12:56:00.306 [main] INFO org.stellar.sdk.KotlinExtensions - 31 7017cfcd5d2ca913b1a0ef56b13bbc7d9debfa0f435ebb1abc4341cf3c8a4a4c success:true fee:100 CHANGE_TRUST
-
-$ ./cliste -k issuer help pay
-PAY
-
-Pay an amount to another account
-
-usage: cliste pay [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
-
-optional arguments:
-  -h, --help   show this help message and exit
-
-
-positional arguments:
-  RECEIVER     Receiver account key (public or secret) or key name in
-               keys.properties
-
-  AMOUNT       Amount you are paying
-
-  ASSET-CODE   Asset that you are paying with
-
-  MEMO         Optional text memo
-
-
-$ ./cliste -k issuer pay distributor 100 INTT
-12:56:40.265 [main] INFO org.stellar.sdk.KotlinExtensions - 39 1216560fd638a52b64d805b0d5de7147a4023661bd1aecacd367e4b4b58079b6 success:true fee:100 PAYMENT
-
-$ ./cliste -k distributor balance
-accountId: GD2IWOWOR54P54S32QCTPA4YYJFZVGT7ELF4DY5NAKVXWOVR567EMBHC subEntryCount: 1 home domain: null
-
-Balances:
-balance INTT 100.0000000 100000.0000000
-balance XLM 99.9999900 null
-```
-
 # Documentation
 
 ```
+$./cliste help
 CliSte -  the Commnand Line Interface for Stellar
 
 usage: cliste [-h] [-a ACCOUNT_KEY] [-s SIGNING_KEY]... [-v] [-u HORIZON_URL] [--asset-properties ASSET_PROPERTIES]
