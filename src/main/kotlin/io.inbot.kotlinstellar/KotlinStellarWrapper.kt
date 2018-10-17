@@ -12,6 +12,7 @@ import org.stellar.sdk.ManageOfferOperation
 import org.stellar.sdk.Memo
 import org.stellar.sdk.Network
 import org.stellar.sdk.PaymentOperation
+import org.stellar.sdk.Price
 import org.stellar.sdk.Server
 import org.stellar.sdk.SetOptionsOperation
 import org.stellar.sdk.Transaction
@@ -559,6 +560,13 @@ class KotlinStellarWrapper(
         return true to "OK"
     }
 
+    fun mostRecentPrice(baseAsset: Asset, counterAsset: Asset): Price? {
+        return try {
+            trades(baseAsset,counterAsset,limit = 1,descending = true).first().price
+        } catch (e: NoSuchElementException) {
+            null
+        }
+    }
     fun trades(
         baseAsset: Asset? = null,
         counterAsset: Asset?=null,
