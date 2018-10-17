@@ -3,6 +3,7 @@ package io.inbot.kotlinstellar
 import com.google.common.math.LongMath
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
+import org.stellar.sdk.Price
 import org.stellar.sdk.assetCode
 import java.math.BigDecimal
 import java.math.MathContext
@@ -78,6 +79,11 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
 
     operator fun rem(other: TokenAmount): TokenAmount {
         return of(this.bigDecimalValue.remainder(other.bigDecimalValue).toDouble(), if (hasSameAsset(other)) this.asset else null)
+    }
+
+    fun convertTo(asset: Asset, price: Price): TokenAmount {
+        val converted = stroops.toBigInteger() * price.numerator.toBigInteger() / price.denominator.toBigInteger()
+        return ofStroops(converted.toLong(), asset)
     }
 
     private fun hasSameAsset(other: TokenAmount): Boolean {
