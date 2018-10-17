@@ -149,6 +149,8 @@ fun Server.doTransaction(
     }
 }
 
+fun Price.rate(): Double { return numerator.toDouble()/denominator.toDouble() }
+
 private fun Server.doTransactionInternal(
     tries: Int,
     maxTries: Int,
