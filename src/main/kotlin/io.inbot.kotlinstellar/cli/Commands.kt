@@ -38,7 +38,7 @@ class CommonArgs(parser: ArgParser) {
     val limit by parser.storing("-l", "--limit", help = "Limit", transform = { toInt() }).default(200)
 }
 
-private val doOffers: CommandFunction = { context ->
+private val doListOffers: CommandFunction = { context ->
     withArgs<CommonArgs>(context.commandArgs) {
         println(context.server.offers().forAccount(context.accountKeyPair).limit(limit).execute().records.map {
             "${it.seller.accountId}: ${it.amount} ${it.selling.assetCode} for ${it.buying.assetCode} at ${it.price}"
@@ -210,7 +210,6 @@ private val doPreparePaymentTX: CommandFunction = { context ->
             TokenAmount.of(amount),
             context.asset(assetCode)
         )
-        println("Transaction envelope xdr:")
         println("tx hash: $hash")
         println("tx envelope xdr: $xdr")
     }
@@ -226,9 +225,11 @@ private val doSignTx: CommandFunction = { context ->
         context.signers.forEach {
             tx.sign(it)
         }
-        println("Transaction envelope xdr:")
-        println(tx.hash().toString(StandardCharsets.UTF_8))
-        println(tx.toEnvelopeXdrBase64())
+
+        val hash = Base64.getEncoder().encode(tx.hash()).toString(StandardCharsets.UTF_8)
+        println("tx hash: $hash")
+        println("tx envelope xdr: ${tx.toEnvelopeXdrBase64()}")
+
     }
 }
 
@@ -345,7 +346,6 @@ private val doListTrades: CommandFunction = { context ->
     }
 }
 
-
 class TradeAggsArgs(parser: ArgParser) {
     val fromTime by parser.storing("--from", help = "From time in ms after epoch. Default to now-24h", transform = { toLong() })
         .default<Long>(System.currentTimeMillis() - 60*60*1000*24)
@@ -355,7 +355,6 @@ class TradeAggsArgs(parser: ArgParser) {
     val baseAsset by parser.positional("Base asset")
     val counterAsset by parser.positional("Counter asset")
 }
-
 
 private val doListTradeAggs: CommandFunction = { context ->
     withArgs<TradeAggsArgs>(context.commandArgs) {
@@ -381,7 +380,7 @@ enum class Commands(
     val requiresAccount: Boolean = true
 ) {
     balance(doBalance, helpIntroduction = "Shows the account balance of the specified public key."),
-    offers(doOffers, CommonArgs::class),
+    listOffers(doListOffers, CommonArgs::class),
     defineAsset(doDefineAsset, DefineAssetArgs::class, requiresAccount = false),
     listAssets(doListAssets, NoArgs::class, "List the defined assets", requiresAccount = false),
     defineKey(doDefineKey, DefineKeyArgs::class, requiresAccount = false),
