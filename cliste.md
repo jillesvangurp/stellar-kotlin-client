@@ -11,7 +11,7 @@ gradle installDist
 
 # Introduction to stellar using cliste
 
-[IntroductionToStellarUsingCliste](IntroductionToStellarUsingCliste)
+[IntroductionToStellarUsingCliste](IntroductionToStellarUsingCliste.md)
 
 ```
 $ ./cliste createAccount origin 10000
