@@ -1,10 +1,3 @@
----
-title: Explaining Stellar using Cliste
-published: false
-description: Practical overview of some key stellar concepts using my Command Line Interface for STEllar (CLISTE).
-tags: Stellar
----
-
 # Origins of Cliste
 
 A few months ago, we decided to create a token on Stellar at [Inbot](inbot.io). So, I read up, explored the sdks and started trying to figure out how everything works in the Stellar world.
