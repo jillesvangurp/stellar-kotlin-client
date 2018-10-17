@@ -3,6 +3,7 @@ package io.inbot.kotlinstellar
 import io.kotlintest.shouldBe
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.stellar.sdk.Price
 
 class TokenAmountTest {
     @Test
@@ -82,5 +83,10 @@ class TokenAmountTest {
         tokenAmount("6") / tokenAmount(2) shouldBe tokenAmount(3)
         tokenAmount("5") % tokenAmount(2) shouldBe tokenAmount(1)
         tokenAmount("2") * tokenAmount(2) shouldBe tokenAmount(4)
+    }
+
+    @Test
+    fun shouldConvert() {
+        tokenAmount(6).convert(Price(1,3)).tokens shouldBe 2
     }
 }
