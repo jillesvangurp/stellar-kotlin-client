@@ -9,7 +9,9 @@ gradle installDist
 ./cliste help
 ```
 
-# Example use
+# Introduction to stellar using cliste
+
+[IntroductionToStellarUsingCliste](IntroductionToStellarUsingCliste)
 
 ```
 $ ./cliste createAccount origin 10000
@@ -122,9 +124,9 @@ optional arguments:
   --help
 
 
-OFFERS
+LISTOFFERS
 
-usage: cliste offers [-h] [-l LIMIT]
+usage: cliste listOffers [-h] [-l LIMIT]
 
 optional arguments:
   -h, --help      show this help message and exit
@@ -302,11 +304,50 @@ positional arguments:
   MEMO         Optional text memo
 
 
+LISTTRADES
+
+List trades
+
+usage: cliste listTrades [-h] BASE-ASSET COUNTER-ASSET
+
+optional arguments:
+  -h, --help      show this help message and exit
+
+
+positional arguments:
+  BASE-ASSET      Base asset
+
+  COUNTER-ASSET   Counter asset
+
+
+LISTTRADEAGGS
+
+List trade aggregations
+
+usage: cliste listTradeAggs [-h] [--from FROM] [--to TO] [-r RESOLUTION] BASE-ASSET COUNTER-ASSET
+
+optional arguments:
+  -h, --help                show this help message and exit
+
+  --from FROM               From time in ms after epoch. Default to now-24h
+
+  --to TO                   to time in ms after epoch. Default now
+
+  -r RESOLUTION,            resolution. One of T1_MINUTES, T5_MINUTES, T15_MINUTES, T1_HOURS, T1_DAYS, T1_WEEKS
+  --resolution RESOLUTION
+
+
+positional arguments:
+  BASE-ASSET                Base asset
+
+  COUNTER-ASSET             Counter asset
+
+
 TRUST
 
 Trust an asset
 
-usage: cliste trust [-h] ASSET-CODE AMOUNT
+usage: cliste trust [-h] ASSET-CODE [AMOUNT]
 
 optional arguments:
   -h, --help   show this help message and exit
@@ -387,7 +428,6 @@ For any argument that takes a key in cliste you can also use the alias. When you
 saved here. You can also use `cliste defineKey` and `cliste listKeys`
 - `assets.properties`: a map of asset code to
 issueing accountId. Use `cliste defineAsset` and `cliste listAssets` to manage
-
 ```
 
 # Security
