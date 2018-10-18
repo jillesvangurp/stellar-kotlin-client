@@ -26,6 +26,8 @@ import java.util.Base64
 import java.util.Locale
 import kotlin.reflect.KClass
 
+
+
 typealias CommandFunction = (CommandContext) -> Unit
 
 private val doBalance: CommandFunction = { context ->
@@ -341,7 +343,7 @@ private val doListTrades: CommandFunction = { context ->
         builder.order(RequestBuilder.Order.DESC).limit(199)
         val response = builder.execute()
         response.records.forEach {
-            println("${it.ledgerCloseTime} ${it.baseAccount.accountId} sold ${it.baseAmount} ${it.baseAsset.assetCode} for ${it.counterAmount} ${it.counterAsset.assetCode} to ${it.counterAccount.accountId} at ${it.price.numerator}/${it.price.denominator} (${it.price.numerator.toDouble() / it.price.denominator.toDouble()})")
+            println(it.describe())
         }
     }
 }
@@ -367,7 +369,7 @@ private val doListTradeAggs: CommandFunction = { context ->
                 ?: throw InvalidArgumentException(
                     "Should be one of ${TradeAggregationResolution.validValues}")
         ).execute().records.forEach {
-            println("${it.date.toInstant()} O:${it.open} C:${it.close} ${it.baseVolume} $baseAsset to ${it.counterVolume} ${counterAsset} - L:${it.low} A:${it.avg} H:${it.high} count:${it.tradeCount}")
+            println(it.describe(baseAsset,counterAsset))
 
         }
     }

@@ -4,6 +4,7 @@ import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.tokenAmount
 import io.inbot.kotlinstellar.xdrDecodeString
 import org.stellar.sdk.Asset
+import org.stellar.sdk.assetCode
 import org.stellar.sdk.describe
 import org.stellar.sdk.xdr.TransactionResult
 
@@ -66,4 +67,12 @@ fun SubmitTransactionResponse.describe(): String {
     val fee = transactionResult.feeCharged.int64 ?: 0
     return """$ledger $hash success:$isSuccess fee:$fee ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
         .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
+}
+
+fun TradeResponse.describe() : String {
+    return "${ledgerCloseTime} ${baseAccount.accountId} sold ${baseAmount} ${baseAsset.assetCode} for ${counterAmount} ${counterAsset.assetCode} to ${counterAccount.accountId} at ${price.numerator}/${price.denominator} (${price.numerator.toDouble() / price.denominator.toDouble()})"
+}
+
+fun TradeAggregationResponse.describe(baseAssetCode: String, counterAssetCode: String): String {
+    return "${date.toInstant()} O:${open} C:${close} ${baseVolume} $baseAssetCode to ${counterVolume} ${counterAssetCode} - L:${low} A:${avg} H:${high} count:${tradeCount}"
 }
