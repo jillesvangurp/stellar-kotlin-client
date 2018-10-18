@@ -7,6 +7,7 @@ import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
 import org.stellar.sdk.Server
 import org.stellar.sdk.parseKeyPair
+import org.stellar.sdk.requests.ErrorResponse
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Properties
@@ -57,6 +58,13 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
                 e.printStackTrace()
             }
             throw e
+        } catch (err: ErrorResponse) {
+            if(args.verbose) {
+                err.printStackTrace()
+            }
+            throw SystemExitException(
+                "Command '${args.commandName}' failed with status ${err.code}: ${err.message}\n${err.body}", 1
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             throw SystemExitException(
