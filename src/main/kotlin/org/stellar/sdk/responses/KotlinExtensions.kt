@@ -22,7 +22,10 @@ authRequired: ${flags.authRequired}
 authRevocable: ${flags.authRevocable}
 
 Balances:
-${balances.map { "${it.asset.describe()} b:${it.balance} l:${it.limit ?: "-"} - sl: ${it.sellingLiabilities ?: "-"} - bl: ${it.buyingLiabilities ?: "-"}" }
+${balances.map {
+        "${it.asset.describe()} b:${it.balance} l:${it.limit ?: "-"} - sl: ${it.sellingLiabilities
+            ?: "-"} - bl: ${it.buyingLiabilities ?: "-"}"
+    }
         .joinToString("\n")}
 """.trimIndent()
 }

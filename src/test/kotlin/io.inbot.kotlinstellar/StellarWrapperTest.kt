@@ -16,7 +16,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -301,7 +300,7 @@ class StellarWrapperTest {
 
     @Test
     fun `should stream payments`() {
-        runBlocking {
+        GlobalScope.launch {
             var paymentCounter = 0
             val endlessSequence = async {
                 try {
