@@ -132,7 +132,7 @@ fun Server.prepareTransaction(forAccount: KeyPair, transactionBlock: (Transactio
  * @param transactionBlock a block where you can add operations to the transaction
  * @return the response
  */
-fun Server.doTransaction(
+ fun Server.doTransaction(
     forAccount: KeyPair,
     maxTries: Int,
     signers: Array<KeyPair> = arrayOf(forAccount),
@@ -149,7 +149,7 @@ fun Server.doTransaction(
     }
 }
 
-fun Price.rate(): Double { return numerator.toDouble()/denominator.toDouble() }
+fun Price.rate(): Double { return numerator.toDouble() / denominator.toDouble() }
 
 private fun Server.doTransactionInternal(
     tries: Int,
@@ -175,6 +175,7 @@ private fun Server.doTransactionInternal(
             if (errorCode == "tx_bad_seq" && tries < maxTries) {
                 // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
                 // using increments of 1s because stellar transactions are relatively slow
+                println(":-(")
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
                 return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionBlock)
             } else {

@@ -69,10 +69,10 @@ fun SubmitTransactionResponse.describe(): String {
         .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
 }
 
-fun TradeResponse.describe() : String {
-    return "${ledgerCloseTime} ${baseAccount.accountId} sold ${baseAmount} ${baseAsset.assetCode} for ${counterAmount} ${counterAsset.assetCode} to ${counterAccount.accountId} at ${price.numerator}/${price.denominator} (${price.numerator.toDouble() / price.denominator.toDouble()})"
+fun TradeResponse.describe(): String {
+    return "$ledgerCloseTime ${baseAccount.accountId} sold $baseAmount ${baseAsset.assetCode} for $counterAmount ${counterAsset.assetCode} to ${counterAccount.accountId} at ${price.numerator}/${price.denominator} (${price.numerator.toDouble() / price.denominator.toDouble()})"
 }
 
 fun TradeAggregationResponse.describe(baseAssetCode: String, counterAssetCode: String): String {
-    return "${date.toInstant()} O:${open} C:${close} ${baseVolume} $baseAssetCode to ${counterVolume} ${counterAssetCode} - L:${low} A:${avg} H:${high} count:${tradeCount}"
+    return "${date.toInstant()} O:$open C:$close $baseVolume $baseAssetCode to $counterVolume $counterAssetCode - L:$low A:$avg H:$high count:$tradeCount"
 }

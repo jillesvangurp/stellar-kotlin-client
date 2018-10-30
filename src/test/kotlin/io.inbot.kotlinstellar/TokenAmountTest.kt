@@ -87,6 +87,6 @@ class TokenAmountTest {
 
     @Test
     fun shouldConvert() {
-        tokenAmount(6).convert(Price(1,3)).tokens shouldBe 2
+        tokenAmount(6).convert(Price(1, 3)).tokens shouldBe 2
     }
 }

@@ -11,10 +11,12 @@ import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.awaitAll
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -194,7 +196,7 @@ class StellarWrapperTest {
 
     @Test
     fun `concurrent transaction should retry`() {
-        runBlocking {
+        GlobalScope.launch {
             val tasks = mutableListOf<Deferred<KeyPair>>()
             for (i in 0..2) {
                 tasks.add(async {

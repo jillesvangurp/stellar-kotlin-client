@@ -30,7 +30,5 @@ class TestnetTest {
                 println("\t${por.from.accountId} ${por.amount} ${por.asset.describe()} ${por.to.accountId}")
             }
         }
-
     }
-
 }

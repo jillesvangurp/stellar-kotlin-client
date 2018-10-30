@@ -562,59 +562,58 @@ class KotlinStellarWrapper(
 
     fun mostRecentPrice(baseAsset: Asset, counterAsset: Asset): Price? {
         return try {
-            trades(baseAsset,counterAsset,limit = 1,descending = true).first().price
+            trades(baseAsset, counterAsset, limit = 1, descending = true).first().price
         } catch (e: NoSuchElementException) {
             null
         }
     }
     fun trades(
         baseAsset: Asset? = null,
-        counterAsset: Asset?=null,
+        counterAsset: Asset? = null,
         offerId: String? = null,
         account: KeyPair? = null,
         cursor: String? = null,
-        limit: Int=20,
-        descending: Boolean=false
+        limit: Int = 20,
+        descending: Boolean = false
     ): Sequence<TradeResponse> {
         val builder = server.trades()
-        if(baseAsset != null) {
+        if (baseAsset != null) {
             builder.baseAsset(baseAsset)
         }
-        if(counterAsset != null) {
+        if (counterAsset != null) {
             builder.counterAsset(counterAsset)
         }
-        if(offerId != null) {
+        if (offerId != null) {
             builder.offerId(offerId)
         }
-        if(account != null) {
+        if (account != null) {
             builder.forAccount(account)
         }
-        if(cursor != null) {
+        if (cursor != null) {
             builder.cursor(cursor)
         }
 
-        builder.order(if(descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
+        builder.order(if (descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
         builder.limit(limit)
         return builder.execute().records.iterator().asSequence()
     }
 
     fun tradeAggs(
         baseAsset: Asset,
-        counterAsset: Asset=nativeXlmAsset,
+        counterAsset: Asset = nativeXlmAsset,
         from: Instant,
         to: Instant,
         resolution: TradeAggregationResolution,
         cursor: String? = null,
-        limit: Int=20,
-        descending: Boolean=false
+        limit: Int = 20,
+        descending: Boolean = false
     ): Sequence<TradeAggregationResponse> {
-        val builder = server.tradeAggregations(baseAsset,counterAsset,from.toEpochMilli(),to.toEpochMilli(),resolution.resolution)
-        if(cursor != null) {
+        val builder = server.tradeAggregations(baseAsset, counterAsset, from.toEpochMilli(), to.toEpochMilli(), resolution.resolution)
+        if (cursor != null) {
             builder.cursor(cursor)
         }
-        builder.order(if(descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
+        builder.order(if (descending) RequestBuilder.Order.DESC else RequestBuilder.Order.ASC)
         builder.limit(limit)
         return builder.execute().records.iterator().asSequence()
     }
-
 }

@@ -59,7 +59,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
             }
             throw e
         } catch (err: ErrorResponse) {
-            if(args.verbose) {
+            if (args.verbose) {
                 err.printStackTrace()
             }
             throw SystemExitException(

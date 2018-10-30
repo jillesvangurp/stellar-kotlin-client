@@ -81,7 +81,7 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
         return of(this.bigDecimalValue.remainder(other.bigDecimalValue).toDouble(), if (hasSameAsset(other)) this.asset else null)
     }
 
-    fun convert(price: Price,asset: Asset?=null): TokenAmount {
+    fun convert(price: Price, asset: Asset? = null): TokenAmount {
         // use BigInteger so we can work with intermediate values that exceed Long.MAX
         val converted = (totalStroops.toBigInteger() * price.numerator.toBigInteger()) / price.denominator.toBigInteger()
         return ofStroops(converted.toLong(), asset)

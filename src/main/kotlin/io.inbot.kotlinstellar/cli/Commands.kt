@@ -26,8 +26,6 @@ import java.util.Base64
 import java.util.Locale
 import kotlin.reflect.KClass
 
-
-
 typealias CommandFunction = (CommandContext) -> Unit
 
 private val doBalance: CommandFunction = { context ->
@@ -231,7 +229,6 @@ private val doSignTx: CommandFunction = { context ->
         val hash = Base64.getEncoder().encode(tx.hash()).toString(StandardCharsets.UTF_8)
         println("tx hash: $hash")
         println("tx envelope xdr: ${tx.toEnvelopeXdrBase64()}")
-
     }
 }
 
@@ -353,7 +350,7 @@ class TradeAggsArgs(parser: ArgParser) {
         .default<Long>(System.currentTimeMillis() - 60*60*1000*24)
     val toTime by parser.storing("--to", help = "to time in ms after epoch. Default now", transform = { toLong() })
         .default<Long>(System.currentTimeMillis())
-    val resolution by parser.storing("-r", "--resolution",help="resolution. One of ${TradeAggregationResolution.validValues}").default("1_HOURS")
+    val resolution by parser.storing("-r", "--resolution", help = "resolution. One of ${TradeAggregationResolution.validValues}").default("1_HOURS")
     val baseAsset by parser.positional("Base asset")
     val counterAsset by parser.positional("Counter asset")
 }
@@ -369,8 +366,7 @@ private val doListTradeAggs: CommandFunction = { context ->
                 ?: throw InvalidArgumentException(
                     "Should be one of ${TradeAggregationResolution.validValues}")
         ).execute().records.forEach {
-            println(it.describe(baseAsset,counterAsset))
-
+            println(it.describe(baseAsset, counterAsset))
         }
     }
 }
