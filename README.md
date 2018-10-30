@@ -2,13 +2,11 @@
 
 # Inbot Stellar Kotlin Wrapper
 
-The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some Kotlin specific goodness. The intent is to get rid of a lot of boilerplate and make it easy to create accounts, work with a standalone container, and do transactions.
-
-**This is a work in progress.** APIs may change, refactoring may happen, etc. When this changes we'll remove this notice. Keeping the example  below is a bit of a PITA, so refer to the tests and API documentation (gradle dokka) for the current state.
+The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some Kotlin specific goodness. The main goal for the library is to get rid of a lot of boilerplate that is needed for using the Java SDK. This is done by leveraging features in Kotlin to add extension methods to the official APIs, introduce DSL style APIs for things like transactions, etc.
 
 The plan is to keep on adding convenience methods. 
 
-**IMPORTANT** This currently depends on a fork of the java SDK that we created for a [pull request](https://github.com/stellar/java-stellar-sdk/pull/132). This shades the dependencies and updates some of them as well.
+**IMPORTANT** This currently depends on a fork of the java SDK that we created for a [pull request](https://github.com/stellar/java-stellar-sdk/issues/141). TThis gets rid of the jersey dependency in the SDK. After this is merged, we will likely release a 1.0 of this project.
 
 # Features
 
@@ -16,16 +14,19 @@ The plan is to keep on adding convenience methods.
 - make dealing with assets, asset codes, and token amounts less painful. The SDK represents amounts as strings; Stellar represents amounts as Long values. So, 1 XLM (the 'native' token) is actually represented as 10^7 or 10M stroops. To make dealing with amounts and calculating rates correctly, we have added a `TokenAmount` data class. This does all the right things and comes with several factory methods so you can construct amounts from a String, a Double, or a pair of longs to represent tokens and stroops. We also add several extension methods to get instances of this class from relevant classes in the SDK
 - `KotlinStellarWrapper` provides simple functions to do common things like creating new accounts, adding trust lines, doing payments, or making offers.
 
-# CliSte - the command line interface for Stellar
+# CliSte - the Command Line Interface for STEllar
 
-As part of this library, we also included a command line interface that you can use to interact with stellar.
+As part of this library, we also included a **Command Line Interface for STEllar (CLISTE)** that you can use to interact with stellar. This started out as a demo app for the library and quickly became a very convenient tool for us to interact with stellar. Using UIs like stellar laboratory is comparatively tedious and slow.
 
-- create accounts
-- do payments, offers, multi signature payments
-- create your own assets
-- manage lists of accounts and assets
-- and more ...
-- works against standalone net, testnet, and public net. For the standalong net, it has support for generating accounts using the root key. No friendbot required.
+- Fully supports working with Standalone stellar instances running on localhost. Most wallets do not support this at all.
+- On the standalone net, you can bootstrap accounts without the friendbot.
+- Easily switch between standalone, testnet, and public net.
+- create accounts, do payments, offers, multi signature payments, list trades, and much more
+- Easily create and manage your own assets, trustlines, etc.
+- Manage lists of accounts and assets and use human readable aliases for your key accounts in cliste invocations. This is highly useful for scripting scenarios using a standalone net. We have used this for prototyping the stellar launch of our token. 
+- and much more ...
+
+Note. we will likely move cliste to its own repository after the 1.0 release of this library.
 
 [CliSte Documentation](cliste.md)
 
