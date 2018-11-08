@@ -17,6 +17,7 @@ import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.requests.RequestBuilder
 import org.stellar.sdk.responses.describe
+import org.stellar.sdk.responses.operations.PaymentOperationResponse
 import org.stellar.sdk.seedString
 import org.stellar.sdk.xdr.OperationType
 import org.stellar.sdk.xdr.TransactionEnvelope
@@ -331,6 +332,21 @@ class TradeArgs(parser: ArgParser) {
     val counterAsset by parser.positional("Counter asset")
 }
 
+private val doListPayments: CommandFunction = { context ->
+    withArgs<NoArgs>(context.commandArgs) {
+        val builder = context.server.payments()
+            .forAccount(context.accountKeyPair)
+
+        builder.order(RequestBuilder.Order.DESC).limit(199)
+        val response = builder.execute()
+        response.records.forEach {
+            val pm = it as PaymentOperationResponse
+            println("${pm.createdAt}\t${pm.from.accountId}\t${pm.to.accountId}\t${pm.amount}\t${pm.asset.assetCode}")
+        }
+    }
+}
+
+
 private val doListTrades: CommandFunction = { context ->
     withArgs<TradeArgs>(context.commandArgs) {
         val builder = context.server.trades()
@@ -413,6 +429,7 @@ enum class Commands(
         helpIntroduction = "Submit a transaction envelope in XDR form. You should add signatures first using signTx.",
         requiresAccount = false
     ),
+    listPayments(doListPayments, NoArgs::class, helpIntroduction = "List trades", requiresAccount = true),
     listTrades(doListTrades, TradeArgs::class, helpIntroduction = "List trades", requiresAccount = false),
     listTradeAggs(
         doListTradeAggs,
