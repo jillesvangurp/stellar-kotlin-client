@@ -549,11 +549,14 @@ class KotlinStellarWrapper(
         val receiverAccount = server.findAccount(receiver)
             ?: return false to "Receiver ${receiver.accountId} does not exist"
         if (!tokenAmount.asset.isNative()) {
-            val currentReceiverBalance = receiverAccount.balanceFor(tokenAmount.asset)
-                ?: return false to "Receiver ${receiver.accountId} does not have a trust line for ${tokenAmount.asset.describe()}"
-            val trustLineLimit = tokenAmount(currentReceiverBalance.limit)
-            if (trustLineLimit < tokenAmount) {
-                return false to "Receiver ${sender.accountId} trust line limit of $trustLineLimit is not enough to receive $tokenAmount."
+            if(tokenAmount.asset.assetIssuer != receiver.accountId) {
+                // skip trust line check if we are destroying tokens by sending them to the issuer
+                val currentReceiverBalance = receiverAccount.balanceFor(tokenAmount.asset)
+                    ?: return false to "Receiver ${receiver.accountId} does not have a trust line for ${tokenAmount.asset.describe()}"
+                val trustLineLimit = tokenAmount(currentReceiverBalance.limit)
+                if (trustLineLimit < tokenAmount) {
+                    return false to "Receiver ${sender.accountId} trust line limit of $trustLineLimit is not enough to receive $tokenAmount."
+                }
             }
         }
 
