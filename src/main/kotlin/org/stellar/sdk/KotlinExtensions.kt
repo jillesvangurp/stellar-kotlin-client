@@ -182,7 +182,7 @@ private fun Server.doTransactionInternal(
             } else {
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
                 throw IllegalStateException(
-                    "failure after $tries transaction failed $errorCode - $operationsFailures"
+                    "failure after $tries transaction failed $errorCode - $operationsFailures ${response.describe()}"
                 )
             }
         }

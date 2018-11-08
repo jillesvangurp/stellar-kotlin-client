@@ -340,8 +340,14 @@ private val doListPayments: CommandFunction = { context ->
         builder.order(RequestBuilder.Order.DESC).limit(199)
         val response = builder.execute()
         response.records.forEach {
-            val pm = it as PaymentOperationResponse
-            println("${pm.createdAt}\t${pm.from.accountId}\t${pm.to.accountId}\t${pm.amount}\t${pm.asset.assetCode}")
+            when(it) {
+                is PaymentOperationResponse -> {
+                    println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
+                }
+                else -> {
+                    println("${it.createdAt}\t${it.sourceAccount.accountId}\t${it::class.simpleName}\t${it.transactionHash}")
+                }
+            }
         }
     }
 }
