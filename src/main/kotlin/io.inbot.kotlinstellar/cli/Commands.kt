@@ -340,7 +340,7 @@ private val doListPayments: CommandFunction = { context ->
         builder.order(RequestBuilder.Order.DESC).limit(199)
         val response = builder.execute()
         response.records.forEach {
-            when(it) {
+            when (it) {
                 is PaymentOperationResponse -> {
                     println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
                 }
@@ -351,7 +351,6 @@ private val doListPayments: CommandFunction = { context ->
         }
     }
 }
-
 
 private val doListTrades: CommandFunction = { context ->
     withArgs<TradeArgs>(context.commandArgs) {

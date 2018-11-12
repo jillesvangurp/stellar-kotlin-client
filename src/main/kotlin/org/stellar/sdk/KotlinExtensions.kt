@@ -180,6 +180,7 @@ private fun Server.doTransactionInternal(
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
                 return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionBlock)
             } else {
+
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
                 throw IllegalStateException(
                     "failure after $tries transaction failed $errorCode - $operationsFailures ${response.describe()}"
