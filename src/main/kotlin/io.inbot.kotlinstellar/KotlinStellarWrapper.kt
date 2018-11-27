@@ -57,7 +57,7 @@ val nativeXlmAsset = AssetTypeNative()
 class KotlinStellarWrapper(
     val server: Server,
     val networkPassphrase: String? = "Standalone Network ; February 2017",
-    val minimumBalance: TokenAmount = TokenAmount.of(20, 0),
+    val minimumBalance: TokenAmount = TokenAmount.of(1, 0),
     val defaultMaxTries: Int = 10,
     val stellarNetwork: StellarNetwork = StellarNetwork.standalone
 ) {
