@@ -374,6 +374,7 @@ class TradeAggsArgs(parser: ArgParser) {
     val resolution by parser.storing("-r", "--resolution", help = "resolution. One of ${TradeAggregationResolution.validValues}").default("1_HOURS")
     val baseAsset by parser.positional("Base asset")
     val counterAsset by parser.positional("Counter asset")
+    val offSet by parser.positional(help = "offset", transform = { toLong() }).default<Long>(0L)
 }
 
 private val doListTradeAggs: CommandFunction = { context ->
@@ -385,7 +386,8 @@ private val doListTradeAggs: CommandFunction = { context ->
             toTime,
             TradeAggregationResolution.parse(resolution)?.resolution
                 ?: throw InvalidArgumentException(
-                    "Should be one of ${TradeAggregationResolution.validValues}")
+                    "Should be one of ${TradeAggregationResolution.validValues}"),
+            offSet
         ).execute().records.forEach {
             println(it.describe(baseAsset, counterAsset))
         }

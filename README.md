@@ -6,7 +6,6 @@ The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some K
 
 The plan is to keep on adding convenience methods. 
 
-**IMPORTANT** This currently depends on a fork of the java SDK that we created for a [pull request](https://github.com/stellar/java-stellar-sdk/issues/141). TThis gets rid of the jersey dependency in the SDK. After this is merged, we will likely release a 1.0 of this project.
 
 # Features
 

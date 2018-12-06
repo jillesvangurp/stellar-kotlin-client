@@ -360,7 +360,7 @@ class KotlinStellarWrapper(
             }
             txBuilder.addMemo(Memo.text(memo))
         }
-        val tx = txBuilder.build()
+        val tx = txBuilder.setTimeout(Transaction.Builder.TIMEOUT_INFINITE).build()
         val transactionEnvelope = TransactionEnvelope()
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
@@ -609,9 +609,12 @@ class KotlinStellarWrapper(
         resolution: TradeAggregationResolution,
         cursor: String? = null,
         limit: Int = 20,
-        descending: Boolean = false
+        descending: Boolean = false,
+        offSet: Long = 0L
     ): Sequence<TradeAggregationResponse> {
-        val builder = server.tradeAggregations(baseAsset, counterAsset, from.toEpochMilli(), to.toEpochMilli(), resolution.resolution)
+        val builder = server.tradeAggregations(baseAsset, counterAsset, from.toEpochMilli(), to.toEpochMilli(), resolution.resolution,
+            offSet
+        )
         if (cursor != null) {
             builder.cursor(cursor)
         }
