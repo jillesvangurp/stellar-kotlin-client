@@ -33,6 +33,8 @@ Note. we will likely move cliste to its own repository after the 1.0 release of 
 
 Create a custom asset with a trust line as per the [walkthrough](https://www.stellar.org/developers/guides/walkthroughs/custom-assets.html).
 
+Note: also look at our integration [tests](https://github.com/Inbot/inbot-stellar-kotlin-wrapper/blob/master/src/test/kotlin/io.inbot.kotlinstellar/StellarWrapperTest.kt) for a more in debth impression of how useful this is.
+
 ```kotlin
 val server = Server("http://localhost:8000")
 // create the wrapper
