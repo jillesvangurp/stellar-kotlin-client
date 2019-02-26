@@ -29,3 +29,4 @@
 .DS_Store
 *.properties
 clisteinbot
+.kotlintest
