@@ -119,12 +119,6 @@ fun Asset.amount(tokens: Long, stroops: Long = 0): TokenAmount {
     return tokenAmount(tokens, stroops, this)
 }
 
-fun Server.prepareTransaction(forAccount: KeyPair, transactionBlock: (Transaction.Builder).() -> Unit): Transaction {
-    val builder = Transaction.Builder(accounts().account(forAccount))
-    transactionBlock.invoke(builder)
-    return builder.build()
-}
-
 /**
  * Kotlin helper to create, sign, and submit a transaction.
  * @param forAccount account that signs the transaction
@@ -137,10 +131,11 @@ fun Server.doTransaction(
     maxTries: Int,
     signers: Array<KeyPair> = arrayOf(forAccount),
     transactionTimeout: Long = Transaction.Builder.TIMEOUT_INFINITE,
+    baseFee: Int = 100,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     try {
-        val response = doTransactionInternal(0, maxTries, forAccount, signers, transactionTimeout, transactionBlock)
+        val response = doTransactionInternal(0, maxTries, forAccount, signers, transactionTimeout, baseFee, transactionBlock)
         logger.info { response.describe() }
         return response
     } catch (e: ErrorResponse) {
@@ -160,12 +155,14 @@ private fun Server.doTransactionInternal(
     keyPair: KeyPair,
     signers: Array<KeyPair>,
     transactionTimeout: Long = Transaction.Builder.TIMEOUT_INFINITE,
+    baseFee: Int = 100,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
     val builder = Transaction.Builder(accounts().account(keyPair))
     builder.setTimeout(transactionTimeout)
+    builder.setOperationFee(baseFee)
     transactionBlock.invoke(builder)
     val transaction = builder.buildAndSign(*signers)
     try {
@@ -181,7 +178,7 @@ private fun Server.doTransactionInternal(
                 // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
                 // using increments of 1s because stellar transactions are relatively slow
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
-                return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, transactionBlock)
+                return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, baseFee, transactionBlock)
             } else {
 
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
@@ -192,7 +189,7 @@ private fun Server.doTransactionInternal(
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
         if (tries < maxTries) {
-            return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, transactionBlock)
+            return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, baseFee, transactionBlock)
         } else {
             throw e
         }

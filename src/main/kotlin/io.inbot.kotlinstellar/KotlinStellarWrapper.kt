@@ -343,7 +343,9 @@ class KotlinStellarWrapper(
         amount: TokenAmount,
         asset: Asset = amount.asset ?: nativeXlmAsset,
         memo: String? = null,
-        validate: Boolean = true
+        validate: Boolean = true,
+        transactionTimeout: Long = Transaction.Builder.TIMEOUT_INFINITE,
+        baseFee: Int = 100
     ): PreparedTransaction {
         if (validate) {
             val validationResponse = isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
@@ -353,6 +355,7 @@ class KotlinStellarWrapper(
         }
 
         val txBuilder = Transaction.Builder(server.accounts().account(sender))
+            .setOperationFee(baseFee)
             .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
         if (StringUtils.isNotBlank(memo)) {
             if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
@@ -360,7 +363,7 @@ class KotlinStellarWrapper(
             }
             txBuilder.addMemo(Memo.text(memo))
         }
-        val tx = txBuilder.setTimeout(Transaction.Builder.TIMEOUT_INFINITE).build()
+        val tx = txBuilder.setTimeout(transactionTimeout).build()
         val transactionEnvelope = TransactionEnvelope()
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
