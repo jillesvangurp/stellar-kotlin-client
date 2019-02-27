@@ -135,27 +135,21 @@ fun Server.doTransaction(
     baseFee: Int = 100,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
-    try {
-        // fetch this once so we get a consistent view on the current sequence number
-        val sourceAccount = accounts().account(forAccount)
+    // fetch this once so we get a consistent view on the current sequence number
+    val sourceAccount = accounts().account(forAccount)
 
-        val response = doTransactionInternal(
-            0,
-            maxTries,
-            forAccount,
-            signers,
-            transactionTimeout,
-            baseFee,
-            transactionBlock,
-            sourceAccount
-        )
-        logger.info { response.describe() }
-        return response
-    } catch (e: ErrorResponse) {
-        logger.warn("${e.code} - ${e.body}")
-
-        throw e
-    }
+    val response = doTransactionInternal(
+        0,
+        maxTries,
+        forAccount,
+        signers,
+        transactionTimeout,
+        baseFee,
+        transactionBlock,
+        sourceAccount
+    )
+    logger.info { response.describe() }
+    return response
 }
 
 fun Price.rate(): Double {
@@ -213,6 +207,7 @@ private fun Server.doTransactionInternal(
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
         if (tries < maxTries) {
+            logger.warn { "retrying $tries out of $maxTries because of a timeout" }
             return doTransactionInternal(
                 tries + 1,
                 maxTries,
@@ -224,10 +219,12 @@ private fun Server.doTransactionInternal(
                 accounts().account(keyPair)
             )
         } else {
+            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}"}
             throw e
         }
     } catch (e: TooManyRequestsException) {
         if (tries < maxTries) {
+            logger.warn { "retrying $tries out of $maxTries because of a timeout" }
             return doTransactionInternal(
                 tries + 1,
                 maxTries,
@@ -239,7 +236,11 @@ private fun Server.doTransactionInternal(
                 accounts().account(keyPair)
             )
         } else {
+            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}"}
             throw e
         }
+    } catch (e: ErrorResponse) {
+        logger.error { "ERROR ${e.code} ${e.body}" }
+        throw e
     }
 }
