@@ -206,6 +206,8 @@ private fun Server.doTransactionInternal(
             }
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
+        // FIXME check if the account sequence number incremented anyway to see if this was a failure or whether we need a retry
+        // FIXME in case the sequence number went up, fetch the latest transaction and compare to what we would have sent to verify if the transaction happened as planned
         if (tries < maxTries) {
             logger.warn { "retrying $tries out of $maxTries because of a timeout" }
             return doTransactionInternal(
@@ -240,6 +242,8 @@ private fun Server.doTransactionInternal(
             throw e
         }
     } catch (e: ErrorResponse) {
+        // FIXME check for mismatching ledger
+        // FIXME check for base fee issues and implement mechanism to retry with higher fee
         logger.error { "ERROR ${e.code} ${e.body}" }
         throw e
     }
