@@ -322,7 +322,7 @@ private val doSetOptions: CommandFunction = { context ->
 
 private val doListAllAssets: CommandFunction = { context ->
     println("code\tissuer\tamount\tnumber_of_accounts")
-    context.wrapper.assetsSequence().forEach {
+    context.wrapper.assetsSequence(sleepOnThrottle = 5000).forEach {
         println("${it.assetCode}\t${it.assetIssuer}\t${it.amount}\t${it.numAccounts}")
     }
 }

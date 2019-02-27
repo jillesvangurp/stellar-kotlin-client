@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.Validate
 import org.stellar.sdk.requests.ErrorResponse
+import org.stellar.sdk.requests.TooManyRequestsException
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.SubmitTransactionResponse
 import org.stellar.sdk.responses.SubmitTransactionTimeoutResponseException
@@ -28,11 +29,11 @@ fun Transaction.Builder.buildAndSign(vararg pairs: KeyPair): Transaction {
 }
 
 fun Server.findAccount(pair: KeyPair): AccountResponse? {
-    try {
-        return accounts().account(pair)
+    return try {
+        accounts().account(pair)
     } catch (e: ErrorResponse) {
         if (e.code == 404) {
-            return null
+            null
         } else {
             throw e
         }
@@ -40,13 +41,13 @@ fun Server.findAccount(pair: KeyPair): AccountResponse? {
 }
 
 fun parseKeyPair(str: String?): KeyPair? {
-    try {
-        return KeyPair.fromSecretSeed(str)
+    return try {
+        KeyPair.fromSecretSeed(str)
     } catch (e: Exception) {
         try {
-            return KeyPair.fromAccountId(str)
+            KeyPair.fromAccountId(str)
         } catch (e: Exception) {
-            return null
+            null
         }
     }
 }
@@ -130,12 +131,24 @@ fun Server.doTransaction(
     forAccount: KeyPair,
     maxTries: Int,
     signers: Array<KeyPair> = arrayOf(forAccount),
-    transactionTimeout: Long = Transaction.Builder.TIMEOUT_INFINITE,
+    transactionTimeout: Long = 15000, // 15 seconds
     baseFee: Int = 100,
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
     try {
-        val response = doTransactionInternal(0, maxTries, forAccount, signers, transactionTimeout, baseFee, transactionBlock)
+        // fetch this once so we get a consistent view on the current sequence number
+        val sourceAccount = accounts().account(forAccount)
+
+        val response = doTransactionInternal(
+            0,
+            maxTries,
+            forAccount,
+            signers,
+            transactionTimeout,
+            baseFee,
+            transactionBlock,
+            sourceAccount
+        )
         logger.info { response.describe() }
         return response
     } catch (e: ErrorResponse) {
@@ -154,15 +167,17 @@ private fun Server.doTransactionInternal(
     maxTries: Int,
     keyPair: KeyPair,
     signers: Array<KeyPair>,
-    transactionTimeout: Long = Transaction.Builder.TIMEOUT_INFINITE,
-    baseFee: Int = 100,
-    transactionBlock: (Transaction.Builder).() -> Unit
+    transactionTimeout: Long,
+    baseFee: Int,
+    transactionBlock: Transaction.Builder.() -> Unit,
+    sourceAccount: AccountResponse?
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
-    val builder = Transaction.Builder(accounts().account(keyPair))
+    val builder = Transaction.Builder(sourceAccount)
     builder.setTimeout(transactionTimeout)
     builder.setOperationFee(baseFee)
+
     transactionBlock.invoke(builder)
     val transaction = builder.buildAndSign(*signers)
     try {
@@ -178,7 +193,16 @@ private fun Server.doTransactionInternal(
                 // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
                 // using increments of 1s because stellar transactions are relatively slow
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
-                return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, baseFee, transactionBlock)
+                return doTransactionInternal(
+                    tries + 1,
+                    maxTries,
+                    keyPair,
+                    signers,
+                    transactionTimeout,
+                    baseFee,
+                    transactionBlock,
+                    accounts().account(keyPair)
+                )
             } else {
 
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
@@ -189,7 +213,31 @@ private fun Server.doTransactionInternal(
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
         if (tries < maxTries) {
-            return doTransactionInternal(tries + 1, maxTries, keyPair, signers, transactionTimeout, baseFee, transactionBlock)
+            return doTransactionInternal(
+                tries + 1,
+                maxTries,
+                keyPair,
+                signers,
+                transactionTimeout,
+                baseFee,
+                transactionBlock,
+                accounts().account(keyPair)
+            )
+        } else {
+            throw e
+        }
+    } catch (e: TooManyRequestsException) {
+        if (tries < maxTries) {
+            return doTransactionInternal(
+                tries + 1,
+                maxTries,
+                keyPair,
+                signers,
+                transactionTimeout,
+                baseFee,
+                transactionBlock,
+                accounts().account(keyPair)
+            )
         } else {
             throw e
         }

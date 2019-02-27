@@ -46,7 +46,7 @@ val bpt = Asset.createNonNativeAsset("bpt", issuerPair.toPublicPair())
 
 val tokenCap = TokenAmount.of(LongMath.pow(10, 10), 0)
 
-class StellarWrapperTest {
+class StellarWrapperIntegrationTest {
     lateinit var server: Server
     lateinit var wrapper: KotlinStellarWrapper
 
@@ -54,6 +54,7 @@ class StellarWrapperTest {
     fun before() {
         server = Server("http://localhost:8000")
         wrapper = KotlinStellarWrapper(server)
+        wrapper.awaitServerIsRunning()
     }
 
     fun givenIssuedBroniePoints() {

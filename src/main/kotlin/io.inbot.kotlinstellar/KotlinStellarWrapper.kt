@@ -23,6 +23,7 @@ import org.stellar.sdk.doTransaction
 import org.stellar.sdk.findAccount
 import org.stellar.sdk.isNative
 import org.stellar.sdk.requests.RequestBuilder
+import org.stellar.sdk.requests.TooManyRequestsException
 import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.AssetResponse
 import org.stellar.sdk.responses.OfferResponse
@@ -96,6 +97,18 @@ class KotlinStellarWrapper(
             } else {
                 throw IllegalStateException("cannot use root keypair when not on standalone network")
             }
+        }
+    }
+
+    fun testConnection(): Boolean {
+        val root = server.root()
+        return root.coreLatestLedger > 0 && root.historyLatestLedger == root.coreLatestLedger
+    }
+
+    fun awaitServerIsRunning() {
+        while (!testConnection()) {
+            logger.info { "waiting for server to be alive" }
+            Thread.sleep(1000)
         }
     }
 
@@ -376,21 +389,30 @@ class KotlinStellarWrapper(
         nextPageFunction: (String) -> Page<T>,
         cursor: String,
         endless: Boolean,
-        pollingIntervalMs: Long
+        pollingIntervalMs: Long,
+        sleepOnThrottle: Long // paging is highly likely to exceed rate limiting
     ): Sequence<Page<T>> {
         var currentCursor = cursor
         var catchingUp = true
         return generateSequence {
-            if (!catchingUp) {
-                Thread.sleep(pollingIntervalMs)
+            Thread.sleep(pollingIntervalMs)
+            var page: Page<T>
+            page = try {
+                nextPageFunction.invoke(currentCursor)
+            } catch (e: TooManyRequestsException) {
+                Thread.sleep(sleepOnThrottle) // slow down
+                nextPageFunction.invoke(currentCursor)
             }
-            var page = nextPageFunction.invoke(currentCursor)
             // make sure we don't return an empty page because that will kill the sequence
             while (page.records.size == 0 && endless) {
-                if (!catchingUp) {
-                    Thread.sleep(pollingIntervalMs)
+                Thread.sleep(pollingIntervalMs)
+
+                page = try {
+                    nextPageFunction.invoke(currentCursor)
+                } catch (e: TooManyRequestsException) {
+                    Thread.sleep(sleepOnThrottle) // slow down
+                    nextPageFunction.invoke(currentCursor)
                 }
-                page = nextPageFunction.invoke(currentCursor)
             }
 
             // we need this because pagingToken is not part of the Response API for some reason
@@ -410,7 +432,8 @@ class KotlinStellarWrapper(
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
-        pollingIntervalMs: Long = 5000
+        pollingIntervalMs: Long = 5000,
+        sleepOnThrottle: Long
 
     ): Sequence<AccountResponse> {
         val fetch = { c: String ->
@@ -418,7 +441,7 @@ class KotlinStellarWrapper(
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
             .flatMap { it.records.asSequence() }
     }
 
@@ -427,7 +450,8 @@ class KotlinStellarWrapper(
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
-        pollingIntervalMs: Long = 5000
+        pollingIntervalMs: Long = 5000,
+        sleepOnThrottle: Long
 
     ): Sequence<OfferResponse> {
         val fetch = { c: String ->
@@ -436,7 +460,7 @@ class KotlinStellarWrapper(
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
             .flatMap { it.records.asSequence() }
     }
 
@@ -446,7 +470,8 @@ class KotlinStellarWrapper(
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
-        pollingIntervalMs: Long = 5000
+        pollingIntervalMs: Long = 5000,
+        sleepOnThrottle: Long
 
     ): Sequence<OperationResponse> {
         val fetch = { c: String ->
@@ -457,7 +482,7 @@ class KotlinStellarWrapper(
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
             .flatMap { it.records.asSequence() }
     }
 
@@ -467,7 +492,8 @@ class KotlinStellarWrapper(
         cursor: String = "now",
         fetchSize: Int = 10,
         endless: Boolean = false,
-        pollingIntervalMs: Long = 5000
+        pollingIntervalMs: Long = 5000,
+        sleepOnThrottle: Long
 
     ): Sequence<TransactionResponse> {
         val fetch = { c: String ->
@@ -477,7 +503,7 @@ class KotlinStellarWrapper(
             builder.cursor(c).limit(fetchSize).execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
             .flatMap { it.records.asSequence() }
     }
 
@@ -487,7 +513,8 @@ class KotlinStellarWrapper(
         cursor: String = "now",
         fetchSize: Int = 200,
         endless: Boolean = false,
-        pollingIntervalMs: Long = 5000
+        pollingIntervalMs: Long = 5000,
+        sleepOnThrottle: Long
 
     ): Sequence<AssetResponse> {
         val fetch = { c: String ->
@@ -500,7 +527,7 @@ class KotlinStellarWrapper(
             builder.execute()
         }
 
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs)
+        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
             .flatMap { it.records.asSequence() }
     }
 
@@ -514,17 +541,18 @@ class KotlinStellarWrapper(
         pollingIntervalMs: Long = 5000
     ): Sequence<PaymentOperationResponse> {
 
-        val fetchPageFunction = { c: String ->
+        val fetchPageFunction = { nextCursor: String ->
             val builder = server.payments()
             if (account != null) builder.forAccount(account)
             if (ledger != null) builder.forLedger(ledger)
             if (transactionId != null) builder.forTransaction(transactionId)
-            var page = builder.limit(fetchSize).cursor(c).execute()
+            val requestBuilder = builder.limit(fetchSize).cursor(nextCursor)
+            val page = requestBuilder.execute()
             page
         }
         val pageSequence = pageSequence<OperationResponse>(
             { it -> it.pagingToken }, fetchPageFunction,
-            cursor, endless, pollingIntervalMs
+            cursor, endless, pollingIntervalMs, 5000
         )
 
         return pageSequence.flatMap { it.records.asSequence() }
