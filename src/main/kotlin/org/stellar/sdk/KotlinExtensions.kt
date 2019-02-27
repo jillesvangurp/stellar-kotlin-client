@@ -119,6 +119,9 @@ fun Asset.amount(value: String): TokenAmount {
 fun Asset.amount(tokens: Long, stroops: Long = 0): TokenAmount {
     return tokenAmount(tokens, stroops, this)
 }
+fun Price.rate(): Double {
+    return numerator.toDouble() / denominator.toDouble()
+}
 
 /**
  * Kotlin helper to create, sign, and submit a transaction.
@@ -132,11 +135,12 @@ fun Server.doTransaction(
     maxTries: Int,
     signers: Array<KeyPair> = arrayOf(forAccount),
     transactionTimeout: Long = 15000, // 15 seconds
-    baseFee: Int = 100,
+    baseFee: Int = 100, // this may require looking at fee stats
+    sequenceNumberOverride: Long? = null, // we use this mainly in tests so we can trigger conflicts.
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
-    // fetch this once so we get a consistent view on the current sequence number
-    val sourceAccount = accounts().account(forAccount)
+
+    val sourceAccount = if (sequenceNumberOverride == null) accounts().account(forAccount) else AccountResponse(forAccount, sequenceNumberOverride)
 
     val response = doTransactionInternal(
         0,
@@ -152,10 +156,6 @@ fun Server.doTransaction(
     return response
 }
 
-fun Price.rate(): Double {
-    return numerator.toDouble() / denominator.toDouble()
-}
-
 private fun Server.doTransactionInternal(
     tries: Int,
     maxTries: Int,
@@ -164,7 +164,7 @@ private fun Server.doTransactionInternal(
     transactionTimeout: Long,
     baseFee: Int,
     transactionBlock: Transaction.Builder.() -> Unit,
-    sourceAccount: AccountResponse?
+    sourceAccount: AccountResponse
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
@@ -187,6 +187,7 @@ private fun Server.doTransactionInternal(
                 // escalate how long it sleeps in between depending on the number of tries and randomize how long it sleeps
                 // using increments of 1s because stellar transactions are relatively slow
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
+
                 return doTransactionInternal(
                     tries + 1,
                     maxTries,
@@ -198,7 +199,6 @@ private fun Server.doTransactionInternal(
                     accounts().account(keyPair)
                 )
             } else {
-
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
                 throw IllegalStateException(
                     "failure after $tries transaction failed $errorCode - $operationsFailures ${response.describe()}"
@@ -209,19 +209,29 @@ private fun Server.doTransactionInternal(
         // FIXME check if the account sequence number incremented anyway to see if this was a failure or whether we need a retry
         // FIXME in case the sequence number went up, fetch the latest transaction and compare to what we would have sent to verify if the transaction happened as planned
         if (tries < maxTries) {
-            logger.warn { "retrying $tries out of $maxTries because of a timeout" }
-            return doTransactionInternal(
-                tries + 1,
-                maxTries,
-                keyPair,
-                signers,
-                transactionTimeout,
-                baseFee,
-                transactionBlock,
-                accounts().account(keyPair)
-            )
+            Thread.sleep(1000)
+            val latestAccount = this.accounts().account(sourceAccount.keypair)
+            if (latestAccount.sequenceNumber == sourceAccount.sequenceNumber) {
+                // nothing happened on the blockchain? lets Try again
+                logger.warn { "retrying $tries out of $maxTries because of a timeout" }
+                return doTransactionInternal(
+                    tries + 1,
+                    maxTries,
+                    keyPair,
+                    signers,
+                    transactionTimeout,
+                    baseFee,
+                    transactionBlock,
+                    accounts().account(keyPair)
+                )
+            } else {
+                val conflictingTransaction =
+                    this.transactions().forAccount(sourceAccount.keypair).includeFailed(true).transaction("${latestAccount.sequenceNumber}")
+                logger.warn { "conflicting transaction ${conflictingTransaction.envelopeXdr} conflicts with ${transaction.toEnvelopeXdrBase64()}" }
+                throw java.lang.IllegalStateException("Timeout and the account sequence number increased; skipping retry to avoid duplicate transaction")
+            }
         } else {
-            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}"}
+            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
             throw e
         }
     } catch (e: TooManyRequestsException) {
@@ -238,7 +248,7 @@ private fun Server.doTransactionInternal(
                 accounts().account(keyPair)
             )
         } else {
-            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}"}
+            logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
             throw e
         }
     } catch (e: ErrorResponse) {
