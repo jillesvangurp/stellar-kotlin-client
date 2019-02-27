@@ -12,7 +12,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Properties
 
-class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
+class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>): AutoCloseable {
     private val accountKeyPairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper
@@ -90,5 +90,9 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) {
         } else {
             return Asset.createNonNativeAsset(code, KeyPair.fromAccountId(issuer))
         }
+    }
+
+    override fun close() {
+        this.server.httpClient.connectionPool().evictAll()
     }
 }

@@ -394,6 +394,29 @@ private val doListTradeAggs: CommandFunction = { context ->
     }
 }
 
+private val doFeeStats: CommandFunction = { context ->
+    withArgs<NoArgs>(context.commandArgs) {
+        val feeStats = context.server.operationFeeStats().execute()
+        println("""
+${feeStats.lastLedgerBaseFee}   last ledger base fee
+${feeStats.ledgerCapacityUsage} ledger capacity usage
+${feeStats.min} min
+${feeStats.p10} p10
+${feeStats.p20} p20
+${feeStats.p30} p30
+${feeStats.p40} p40
+${feeStats.p50} p50
+${feeStats.p60} p60
+${feeStats.p70} p70
+${feeStats.p80} p80
+${feeStats.p90} p90
+${feeStats.p95} p95
+${feeStats.p99} p99
+
+            """.trimIndent())
+    }
+}
+
 enum class Commands(
     val command: CommandFunction,
     val clazz: KClass<*> = NoArgs::class,
@@ -447,6 +470,7 @@ enum class Commands(
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
     listAssetsOnStellar(doListAllAssets, NoArgs::class, "lists all assets on stellar", false),
+    feeStats(doFeeStats, NoArgs::class,"Show fee stats", false),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

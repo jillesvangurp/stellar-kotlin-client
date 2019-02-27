@@ -85,7 +85,9 @@ fun main(args: Array<String>) {
             )
         }
 
-        CommandContext(cliSteArgs, commandArgs).run()
+        CommandContext(cliSteArgs, commandArgs).use {
+            it.run()
+        }
     } catch (e: SystemExitException) {
         if (e is ShowHelpException) {
             println(
