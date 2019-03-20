@@ -12,7 +12,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Properties
 
-class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>): AutoCloseable {
+class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) : AutoCloseable {
     private val accountKeyPairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper

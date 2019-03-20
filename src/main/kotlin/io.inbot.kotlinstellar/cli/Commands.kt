@@ -470,7 +470,7 @@ enum class Commands(
     trust(doTrustAsset, TrustAssetArgs::class, helpIntroduction = "Trust an asset"),
     setOptions(doSetOptions, SetOptionsArgs::class, helpIntroduction = "Set options on an account"),
     listAssetsOnStellar(doListAllAssets, NoArgs::class, "lists all assets on stellar", false),
-    feeStats(doFeeStats, NoArgs::class,"Show fee stats", false),
+    feeStats(doFeeStats, NoArgs::class, "Show fee stats", false),
     help(doHelp, HelpArgs::class, "Show help for a specific command", false)
     ;
 

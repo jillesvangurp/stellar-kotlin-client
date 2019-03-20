@@ -140,8 +140,6 @@ fun Server.doTransaction(
     transactionBlock: (Transaction.Builder).() -> Unit
 ): SubmitTransactionResponse {
 
-    val sourceAccount = if (sequenceNumberOverride == null) accounts().account(forAccount) else AccountResponse(forAccount, sequenceNumberOverride)
-
     val response = doTransactionInternal(
         0,
         maxTries,
@@ -150,7 +148,7 @@ fun Server.doTransaction(
         transactionTimeout,
         baseFee,
         transactionBlock,
-        sourceAccount
+        sequenceNumberOverride
     )
     logger.info { response.describe() }
     return response
@@ -164,9 +162,13 @@ private fun Server.doTransactionInternal(
     transactionTimeout: Long,
     baseFee: Int,
     transactionBlock: Transaction.Builder.() -> Unit,
-    sourceAccount: AccountResponse
+    sequenceNumberOverride: Long? = null // we use this mainly in tests so we can trigger conflicts.
+
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
+
+    val sourceAccount = if (sequenceNumberOverride == null) accounts().account(keyPair) else AccountResponse(keyPair, sequenceNumberOverride)
+
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
     val builder = Transaction.Builder(sourceAccount)
     builder.setTimeout(transactionTimeout)
@@ -195,8 +197,7 @@ private fun Server.doTransactionInternal(
                     signers,
                     transactionTimeout,
                     baseFee,
-                    transactionBlock,
-                    accounts().account(keyPair)
+                    transactionBlock
                 )
             } else {
                 val operationsFailures = response.extras.resultCodes?.operationsResultCodes?.joinToString(", ")
@@ -206,8 +207,6 @@ private fun Server.doTransactionInternal(
             }
         }
     } catch (e: SubmitTransactionTimeoutResponseException) {
-        // FIXME check if the account sequence number incremented anyway to see if this was a failure or whether we need a retry
-        // FIXME in case the sequence number went up, fetch the latest transaction and compare to what we would have sent to verify if the transaction happened as planned
         if (tries < maxTries) {
             Thread.sleep(1000)
             val latestAccount = this.accounts().account(sourceAccount.keypair)
@@ -221,14 +220,12 @@ private fun Server.doTransactionInternal(
                     signers,
                     transactionTimeout,
                     baseFee,
-                    transactionBlock,
-                    accounts().account(keyPair)
+                    transactionBlock
                 )
             } else {
-                val conflictingTransaction =
-                    this.transactions().forAccount(sourceAccount.keypair).includeFailed(true).transaction("${latestAccount.sequenceNumber}")
-                logger.warn { "conflicting transaction ${conflictingTransaction.envelopeXdr} conflicts with ${transaction.toEnvelopeXdrBase64()}" }
-                throw java.lang.IllegalStateException("Timeout and the account sequence number increased; skipping retry to avoid duplicate transaction")
+                // FIXME in case the sequence number went up, fetch the latest transaction and compare to what we would have sent to verify if the transaction happened as planned
+                logger.warn { "conflicting transaction on account sequence number changed from ${sourceAccount.sequenceNumber} to ${latestAccount.sequenceNumber}" }
+                throw java.lang.IllegalStateException("Timeout and the account sequence number increased from ${sourceAccount.sequenceNumber} to ${latestAccount.sequenceNumber}; skipping retry to avoid duplicate transaction")
             }
         } else {
             logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
@@ -236,6 +233,7 @@ private fun Server.doTransactionInternal(
         }
     } catch (e: TooManyRequestsException) {
         if (tries < maxTries) {
+            Thread.sleep(2000)
             logger.warn { "retrying $tries out of $maxTries because of a timeout" }
             return doTransactionInternal(
                 tries + 1,
@@ -244,8 +242,7 @@ private fun Server.doTransactionInternal(
                 signers,
                 transactionTimeout,
                 baseFee,
-                transactionBlock,
-                accounts().account(keyPair)
+                transactionBlock
             )
         } else {
             logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
