@@ -169,6 +169,9 @@ private fun Server.doTransactionInternal(
 
     val sourceAccount = if (sequenceNumberOverride == null) accounts().account(keyPair) else AccountResponse(keyPair, sequenceNumberOverride)
 
+    // building a transaction actually increments this, yikes
+    val currentSequenceNumber = sourceAccount.sequenceNumber
+
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
     val builder = Transaction.Builder(sourceAccount)
     builder.setTimeout(transactionTimeout)
@@ -190,6 +193,7 @@ private fun Server.doTransactionInternal(
                 // using increments of 1s because stellar transactions are relatively slow
                 Thread.sleep(RandomUtils.nextLong(100, 1000 * (tries.toLong() + 1)))
 
+                // retry and get latest sequence number
                 return doTransactionInternal(
                     tries + 1,
                     maxTries,
@@ -210,7 +214,7 @@ private fun Server.doTransactionInternal(
         if (tries < maxTries) {
             Thread.sleep(1000)
             val latestAccount = this.accounts().account(sourceAccount.keypair)
-            if (latestAccount.sequenceNumber == sourceAccount.sequenceNumber) {
+            if (latestAccount.sequenceNumber == currentSequenceNumber) {
                 // nothing happened on the blockchain? lets Try again
                 logger.warn { "retrying $tries out of $maxTries because of a timeout" }
                 return doTransactionInternal(
@@ -220,12 +224,14 @@ private fun Server.doTransactionInternal(
                     signers,
                     transactionTimeout,
                     baseFee,
-                    transactionBlock
+                    transactionBlock,
+                    sequenceNumberOverride = currentSequenceNumber
                 )
             } else {
+
                 // FIXME in case the sequence number went up, fetch the latest transaction and compare to what we would have sent to verify if the transaction happened as planned
                 logger.warn { "conflicting transaction on account sequence number changed from ${sourceAccount.sequenceNumber} to ${latestAccount.sequenceNumber}" }
-                throw java.lang.IllegalStateException("Timeout and the account sequence number increased from ${sourceAccount.sequenceNumber} to ${latestAccount.sequenceNumber}; skipping retry to avoid duplicate transaction")
+                throw java.lang.IllegalStateException("Timeout and the account sequence number increased from ${sourceAccount.sequenceNumber} to ${latestAccount.sequenceNumber} on on ${keyPair.accountId}; skipping retry to avoid duplicate transaction")
             }
         } else {
             logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
@@ -242,7 +248,8 @@ private fun Server.doTransactionInternal(
                 signers,
                 transactionTimeout,
                 baseFee,
-                transactionBlock
+                transactionBlock,
+                sequenceNumberOverride = currentSequenceNumber
             )
         } else {
             logger.error { "failing after too many tries: ${e::class.qualifiedName} ${e.message}" }
