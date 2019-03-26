@@ -68,8 +68,8 @@ fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
 fun SubmitTransactionResponse.describe(): String {
     val transactionResult = getTransactionResult()
     val fee = transactionResult.feeCharged.int64 ?: 0
-    return """$ledger $hash success:$isSuccess fee:$fee ${transactionResult.result.results.map { it.tr.discriminant.name + " " }
-        .joinToString(",")} ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
+    val txResults = transactionResult.result?.results?.joinToString(",") { it.tr.discriminant.name + " " } ?: ""
+    return """$ledger $hash success:$isSuccess fee:$fee $txResults ${extras?.resultCodes?.operationsResultCodes?.joinToString(",") ?: ""}"""
 }
 
 fun TradeResponse.describe(): String {
