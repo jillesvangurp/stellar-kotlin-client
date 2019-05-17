@@ -396,7 +396,8 @@ private val doListTradeAggs: CommandFunction = { context ->
 
 private val doFeeStats: CommandFunction = { context ->
     withArgs<NoArgs>(context.commandArgs) {
-        val feeStats = context.server.operationFeeStats().execute()
+
+        val feeStats = context.server.feeStats().execute()
         println("""
 ${feeStats.lastLedgerBaseFee}   last ledger base fee
 ${feeStats.ledgerCapacityUsage} ledger capacity usage

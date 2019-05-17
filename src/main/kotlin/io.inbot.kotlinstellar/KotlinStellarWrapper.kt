@@ -6,9 +6,9 @@ import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.ChangeTrustOperation
 import org.stellar.sdk.CreateAccountOperation
-import org.stellar.sdk.CreatePassiveOfferOperation
+import org.stellar.sdk.CreatePassiveSellOfferOperation
 import org.stellar.sdk.KeyPair
-import org.stellar.sdk.ManageOfferOperation
+import org.stellar.sdk.ManageSellOfferOperation
 import org.stellar.sdk.Memo
 import org.stellar.sdk.Network
 import org.stellar.sdk.PaymentOperation
@@ -24,7 +24,6 @@ import org.stellar.sdk.findAccount
 import org.stellar.sdk.isNative
 import org.stellar.sdk.requests.RequestBuilder
 import org.stellar.sdk.requests.TooManyRequestsException
-import org.stellar.sdk.responses.AccountResponse
 import org.stellar.sdk.responses.AssetResponse
 import org.stellar.sdk.responses.OfferResponse
 import org.stellar.sdk.responses.Page
@@ -221,12 +220,12 @@ class KotlinStellarWrapper(
             logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
             if (passive) {
                 addOperation(
-                    CreatePassiveOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
+                    CreatePassiveSellOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
                         .build()
                 )
             } else {
                 addOperation(
-                    ManageOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
+                    ManageSellOfferOperation.Builder(selling, buying, sellingAmount.amount, price.amount)
                         .build()
                 )
             }
@@ -281,7 +280,7 @@ class KotlinStellarWrapper(
         val response = server.doTransaction(account, maxTries, signers) {
             logger.info { "delete offer ${offerResponse.id}" }
             addOperation(
-                ManageOfferOperation.Builder(offerResponse.selling, offerResponse.buying, newAmountSelling, newPrice)
+                ManageSellOfferOperation.Builder(offerResponse.selling, offerResponse.buying, newAmountSelling, newPrice)
                     .setOfferId(offerResponse.id)
                     .build()
             )
@@ -300,7 +299,7 @@ class KotlinStellarWrapper(
             return server.doTransaction(account, maxTries, signers = signers) {
                 records.forEach {
                     addOperation(
-                        ManageOfferOperation.Builder(it.selling, it.buying, "0", it.price)
+                        ManageSellOfferOperation.Builder(it.selling, it.buying, "0", it.price)
                             .setOfferId(it.id)
                             .build()
                     )
@@ -428,22 +427,22 @@ class KotlinStellarWrapper(
         }
     }
 
-    fun accountsSequence(
-        cursor: String = "now",
-        fetchSize: Int = 10,
-        endless: Boolean = false,
-        pollingIntervalMs: Long = 5000,
-        sleepOnThrottle: Long
-
-    ): Sequence<AccountResponse> {
-        val fetch = { c: String ->
-            val builder = server.accounts()
-            builder.cursor(c).limit(fetchSize).execute()
-        }
-
-        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
-            .flatMap { it.records.asSequence() }
-    }
+//    fun accountsSequence(
+//        cursor: String = "now",
+//        fetchSize: Int = 10,
+//        endless: Boolean = false,
+//        pollingIntervalMs: Long = 5000,
+//        sleepOnThrottle: Long
+//
+//    ): Sequence<AccountResponse> {
+//        val fetch = { c: String ->
+//            val builder = server.accounts()
+//            builder.cursor(c).limit(fetchSize).execute()
+//        }
+//
+//        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
+//            .flatMap { it.records.asSequence() }
+//    }
 
     fun offersSequence(
         account: KeyPair? = null,
