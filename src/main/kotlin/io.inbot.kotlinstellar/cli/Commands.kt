@@ -7,6 +7,7 @@ import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.TradeAggregationResolution
 import io.inbot.kotlinstellar.xdrDecodeString
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.text.WordUtils
 import org.stellar.sdk.Asset
@@ -17,7 +18,6 @@ import org.stellar.sdk.assetCode
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.requests.RequestBuilder
 import org.stellar.sdk.responses.describe
-import org.stellar.sdk.responses.operations.PaymentOperationResponse
 import org.stellar.sdk.seedString
 import org.stellar.sdk.xdr.OperationType
 import org.stellar.sdk.xdr.TransactionEnvelope
@@ -334,19 +334,10 @@ class TradeArgs(parser: ArgParser) {
 
 private val doListPayments: CommandFunction = { context ->
     withArgs<NoArgs>(context.commandArgs) {
-        val builder = context.server.payments()
-            .forAccount(context.accountKeyPair)
-
-        builder.order(RequestBuilder.Order.DESC).limit(199)
-        val response = builder.execute()
-        response.records.forEach {
-            when (it) {
-                is PaymentOperationResponse -> {
-                    println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
-                }
-                else -> {
-                    println("${it.createdAt}\t${it.sourceAccount.accountId}\t${it::class.simpleName}\t${it.transactionHash}")
-                }
+        runBlocking {
+            println("timestamp\tfrom_account\tto_account\tamount\tasset\ttransaction_hash")
+            context.wrapper.paymentSequence(context.accountKeyPair, cursor = "0", pollingIntervalMs = 200,fetchSize = 199).forEach { it ->
+                println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
             }
         }
     }
