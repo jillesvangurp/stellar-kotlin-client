@@ -24,7 +24,6 @@ import org.stellar.sdk.xdr.TransactionEnvelope
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
-import java.util.Locale
 import kotlin.reflect.KClass
 
 typealias CommandFunction = (CommandContext) -> Unit
@@ -336,7 +335,7 @@ private val doListPayments: CommandFunction = { context ->
     withArgs<NoArgs>(context.commandArgs) {
         runBlocking {
             println("timestamp\tfrom_account\tto_account\tamount\tasset\ttransaction_hash")
-            context.wrapper.paymentSequence(context.accountKeyPair, cursor = "0", pollingIntervalMs = 200,fetchSize = 199).forEach { it ->
+            context.wrapper.paymentSequence(context.accountKeyPair, cursor = "0", pollingIntervalMs = 200, fetchSize = 199).forEach { it ->
                 println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
             }
         }
@@ -467,7 +466,7 @@ enum class Commands(
     ;
 
     val helpText by lazy {
-        """## ${name}
+        """## $name
 
 ${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 160) + "\n\n" else ""}${renderHelp(
             clazz,

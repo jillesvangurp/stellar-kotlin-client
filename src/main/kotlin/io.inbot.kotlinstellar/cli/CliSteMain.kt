@@ -30,7 +30,7 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
         e.printUserMessage(writer, commandName, 160)
         writer.flush()
         bos.flush()
-        return bos.toString("utf-8").replace("positional arguments:","### Positional arguments\n").replace("optional arguments:","### Optional arguments\n")
+        return bos.toString("utf-8").replace("positional arguments:", "### Positional arguments\n").replace("optional arguments:", "### Optional arguments\n")
     }
     throw IllegalStateException("cannot render help for $commandName for args class ${clazz.qualifiedName}")
 }
