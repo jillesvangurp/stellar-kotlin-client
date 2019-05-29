@@ -2,6 +2,8 @@
 
 ## Package io.inbot.kotlinstellar
 
+The `KotlinStellarWrapper` and supporting classes.
+
 ### Types
 
 | Name | Summary |

@@ -1,4 +1,4 @@
-# Module kotlinstellar
+# Module inbot-stellar-kotlin-wrapper
 
 Kotlin client that wraps the Stellar Java SDK.
 

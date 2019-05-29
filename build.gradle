@@ -60,7 +60,7 @@ dokka {
     outputFormat = 'gfm'
     jdkVersion = 8
     outputDirectory = 'docs'
-    includes = ['src/main/kotlin/io/kotlinstellar/module.md']
+    includes = ['src/main/kotlin/io.inbot.kotlinstellar/module.md']
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

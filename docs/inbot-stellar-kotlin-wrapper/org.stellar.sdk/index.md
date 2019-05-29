@@ -2,6 +2,8 @@
 
 ## Package org.stellar.sdk
 
+Misc. extension functions to add functionality to the SDK.
+
 ### Properties
 
 | Name | Summary |

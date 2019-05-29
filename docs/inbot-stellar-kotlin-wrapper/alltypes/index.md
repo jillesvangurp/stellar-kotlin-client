@@ -1,5 +1,7 @@
 
 
+Kotlin client that wraps the Stellar Java SDK.
+
 ### All Types
 
 | Name | Summary |

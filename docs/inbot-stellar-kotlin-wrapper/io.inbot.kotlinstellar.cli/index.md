@@ -2,6 +2,8 @@
 
 ## Package io.inbot.kotlinstellar.cli
 
+Cliste, the Command Line for Stellar. Convenient tool for using stellar from the command line that shows off the functionality provided in this library.
+
 ### Types
 
 | Name | Summary |
