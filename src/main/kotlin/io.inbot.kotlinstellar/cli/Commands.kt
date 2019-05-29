@@ -467,9 +467,9 @@ enum class Commands(
     ;
 
     val helpText by lazy {
-        """## Command: ${name}
+        """## ${name}
 
-${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 120) + "\n\n" else ""}${renderHelp(
+${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 160) + "\n\n" else ""}${renderHelp(
             clazz,
             "cliste $name"
         )}"""

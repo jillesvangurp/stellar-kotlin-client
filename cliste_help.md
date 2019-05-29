@@ -38,7 +38,7 @@ usage: cliste [-h] [-a ACCOUNT_KEY] [-s SIGNING_KEY]... [-v] [-u HORIZON_URL] [-
 
 # Commands
 
-## Command: balance
+## balance
 
 Shows the account balance of the specified public key.
 
@@ -50,7 +50,7 @@ usage: cliste balance [-h]
   --help
 
 
-## Command: listOffers
+## listOffers
 
 usage: cliste listOffers [-h] [-l LIMIT]
 
@@ -62,7 +62,7 @@ usage: cliste listOffers [-h] [-l LIMIT]
   --limit LIMIT
 
 
-## Command: defineAsset
+## defineAsset
 
 usage: cliste defineAsset [-h] ISSUER ASSET-CODE
 
@@ -78,7 +78,7 @@ usage: cliste defineAsset [-h] ISSUER ASSET-CODE
   ASSET-CODE   4 or 12 letter asset code
 
 
-## Command: listAssets
+## listAssets
 
 List the defined assets
 
@@ -90,7 +90,7 @@ usage: cliste listAssets [-h]
   --help
 
 
-## Command: defineKey
+## defineKey
 
 usage: cliste defineKey [-h] NAME KEY
 
@@ -107,7 +107,7 @@ usage: cliste defineKey [-h] NAME KEY
   KEY      key
 
 
-## Command: listKeys
+## listKeys
 
 List the defined keys
 
@@ -119,7 +119,7 @@ usage: cliste listKeys [-h]
   --help
 
 
-## Command: createAccount
+## createAccount
 
 Create a new account
 
@@ -138,7 +138,7 @@ usage: cliste createAccount [-h] [NAME] [AMOUNT]
   AMOUNT   Amount XML to be transferred to the new account (default 20)
 
 
-## Command: pay
+## pay
 
 Pay an amount to another account
 
@@ -160,7 +160,7 @@ usage: cliste pay [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
   MEMO         Optional text memo
 
 
-## Command: preparePaymentTX
+## preparePaymentTX
 
 Prepare an XDR transaction for a payment. Prints the
  XDR of the transaction envelope so you can send it to the signees.
@@ -183,7 +183,7 @@ usage: cliste preparePaymentTX [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
   MEMO         Optional text memo
 
 
-## Command: txInfo
+## txInfo
 
 Show information about an XDR transaction envelope.
 
@@ -205,7 +205,7 @@ usage: cliste txInfo [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
   MEMO         Optional text memo
 
 
-## Command: signTx
+## signTx
 
 Add a signature to a transaction envelope in XDR form.
 
@@ -227,7 +227,7 @@ usage: cliste signTx [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
   MEMO         Optional text memo
 
 
-## Command: submitTx
+## submitTx
 
 Submit a transaction envelope in XDR form. You should add signatures first using signTx.
 
@@ -249,7 +249,7 @@ usage: cliste submitTx [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
   MEMO         Optional text memo
 
 
-## Command: listPayments
+## listPayments
 
 List trades
 
@@ -261,7 +261,7 @@ usage: cliste listPayments [-h]
   --help
 
 
-## Command: listTrades
+## listTrades
 
 List trades
 
@@ -279,7 +279,7 @@ usage: cliste listTrades [-h] BASE-ASSET COUNTER-ASSET
   COUNTER-ASSET   Counter asset
 
 
-## Command: listTradeAggs
+## listTradeAggs
 
 List trade aggregations
 
@@ -306,7 +306,7 @@ usage: cliste listTradeAggs [-h] [--from FROM] [--to TO] [-r RESOLUTION] BASE-AS
   OFF-SET                   offset
 
 
-## Command: trust
+## trust
 
 Trust an asset
 
@@ -324,7 +324,7 @@ usage: cliste trust [-h] ASSET-CODE [AMOUNT]
   AMOUNT       Amount you trust the asset with
 
 
-## Command: setOptions
+## setOptions
 
 Set options on an account
 
@@ -350,7 +350,7 @@ usage: cliste setOptions [-h] [--low-threshold LOW_THRESHOLD] [--medium-threshol
   --home-domain HOME_DOMAIN               
 
 
-## Command: listAssetsOnStellar
+## listAssetsOnStellar
 
 lists all assets on stellar
 
@@ -362,7 +362,7 @@ usage: cliste listAssetsOnStellar [-h]
   --help
 
 
-## Command: feeStats
+## feeStats
 
 Show fee stats
 
@@ -374,7 +374,7 @@ usage: cliste feeStats [-h]
   --help
 
 
-## Command: help
+## help
 
 Show help for a specific command
 
