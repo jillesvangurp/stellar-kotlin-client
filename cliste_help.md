@@ -1,4 +1,4 @@
-# CliSte -  the Commnand Line Interface for Stellar
+# CliSte -  the Command Line Interface for Stellar
 
 usage: cliste [-h] [-a ACCOUNT_KEY] [-s SIGNING_KEY]... [-v] [-u HORIZON_URL] [--asset-properties ASSET_PROPERTIES] [--key-properties KEY_PROPERTIES]
               [--stand-alone-network-passphrase STAND_ALONE_NETWORK_PASSPHRASE] [--stellar-network STELLAR_NETWORK] [COMMAND-NAME]
