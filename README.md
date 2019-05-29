@@ -6,7 +6,9 @@ The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some K
 
 The plan is to keep on adding convenience methods. 
 
+# Documentation
 
+[Dokka API documentation](docs/inbot-stellar-kotlin-wrapper/index.md)
 # Features
 
 - make transaction submission and error handling easier. Our `doTransaction` extension function for the Server class in the sdk does retries on timeout and throws a runtime exceptions if the the result is not successful.
