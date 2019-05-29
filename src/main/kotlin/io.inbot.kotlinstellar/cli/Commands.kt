@@ -54,7 +54,7 @@ class HelpArgs(parser: ArgParser) {
 private val doHelp: CommandFunction = { context ->
     withArgs<HelpArgs>(context.commandArgs) {
         if (command == "all") {
-            println("# CliSte -  the Commnand Line Interface for Stellar\n")
+            println("# CliSte -  the Command Line Interface for Stellar\n")
             println(renderHelp(CliSteArgs::class, "cliste"))
             println()
             println("# Commands\n")
