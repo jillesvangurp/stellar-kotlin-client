@@ -1,0 +1,7 @@
+$dokka.format:gfm
+$dokka.linkExtension:md
+
+io.inbot.kotlinstellar
+io.inbot.kotlinstellar.cli
+org.stellar.sdk
+org.stellar.sdk.responses
