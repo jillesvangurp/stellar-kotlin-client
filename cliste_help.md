@@ -1,148 +1,156 @@
 # CliSte -  the Commnand Line Interface for Stellar
 
-usage: cliste [-h] [-a ACCOUNT_KEY] [-s SIGNING_KEY]... [-v] [-u HORIZON_URL] [--asset-properties ASSET_PROPERTIES]
-              [--key-properties KEY_PROPERTIES] [--stand-alone-network-passphrase STAND_ALONE_NETWORK_PASSPHRASE]
-              [--stellar-network STELLAR_NETWORK] [COMMAND-NAME]
+usage: cliste [-h] [-a ACCOUNT_KEY] [-s SIGNING_KEY]... [-v] [-u HORIZON_URL] [--asset-properties ASSET_PROPERTIES] [--key-properties KEY_PROPERTIES]
+              [--stand-alone-network-passphrase STAND_ALONE_NETWORK_PASSPHRASE] [--stellar-network STELLAR_NETWORK] [COMMAND-NAME]
 
-optional arguments:
+### Optional arguments
+
   -h, --help                                                        show this help message and exit
 
-  -a ACCOUNT_KEY, --account-key ACCOUNT_KEY                         Account key of the account for the transaction.
-                                                                    Required for any commands that do transactions on
-                                                                    accounts. Defaults to the value of the
-                                                                    ST_ACCOUNT_KEY environment variable.
+  -a ACCOUNT_KEY, --account-key ACCOUNT_KEY                         Account key of the account for the transaction. Required for any commands that do
+                                                                    transactions on accounts. Defaults to the value of the ST_ACCOUNT_KEY environment
+                                                                    variable.
 
   -s SIGNING_KEY, --signing-key SIGNING_KEY                         Signing key
 
   -v, --verbose                                                     Verbose output
 
-  -u HORIZON_URL, --horizon-url HORIZON_URL                         URL for horizon. Defaults to to the value of the
-                                                                    ST_HORIZON_URL environment variable or
-                                                                    http://localhost:8000 if that is empty. If you are
-                                                                    planning to run lots of commands against stellar,
-                                                                    you should consider setting up your own horizon
-                                                                    server to avoid rate limiting on the public
-                                                                    endpoints.
+  -u HORIZON_URL, --horizon-url HORIZON_URL                         URL for horizon. Defaults to to the value of the ST_HORIZON_URL environment variable or
+                                                                    http://localhost:8000 if that is empty. If you are planning to run lots of commands
+                                                                    against stellar, you should consider setting up your own horizon server to avoid rate
+                                                                    limiting on the public endpoints.
 
   --asset-properties ASSET_PROPERTIES                               Properties file with assets
 
   --key-properties KEY_PROPERTIES                                   Properties file with named public or private keys
 
-  --stand-alone-network-passphrase STAND_ALONE_NETWORK_PASSPHRASE   network password. You can leave this blank for
-                                                                    testnet or public. It defaults to the passphrase
-                                                                    for the standalone network you get with the
-                                                                    quickstart docker image.
+  --stand-alone-network-passphrase STAND_ALONE_NETWORK_PASSPHRASE   network password. You can leave this blank for testnet or public. It defaults to the
+                                                                    passphrase for the standalone network you get with the quickstart docker image.
 
   --stellar-network STELLAR_NETWORK                                 
 
 
-positional arguments:
+### Positional arguments
+
   COMMAND-NAME                                                      command
 
 
 
-Commands:
-## balance
+# Commands
+
+## Command: balance
 
 Shows the account balance of the specified public key.
 
 usage: cliste balance [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## listOffers
+## Command: listOffers
 
 usage: cliste listOffers [-h] [-l LIMIT]
 
-optional arguments:
+### Optional arguments
+
   -h, --help      show this help message and exit
 
   -l LIMIT,       Limit
   --limit LIMIT
 
 
-## defineAsset
+## Command: defineAsset
 
 usage: cliste defineAsset [-h] ISSUER ASSET-CODE
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   ISSUER       public key of the issuer
 
   ASSET-CODE   4 or 12 letter asset code
 
 
-## listAssets
+## Command: listAssets
 
 List the defined assets
 
 usage: cliste listAssets [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## defineKey
+## Command: defineKey
 
 usage: cliste defineKey [-h] NAME KEY
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-positional arguments:
+### Positional arguments
+
   NAME     name of the key
 
   KEY      key
 
 
-## listKeys
+## Command: listKeys
 
 List the defined keys
 
 usage: cliste listKeys [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## createAccount
+## Command: createAccount
 
 Create a new account
 
 usage: cliste createAccount [-h] [NAME] [AMOUNT]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-positional arguments:
+### Positional arguments
+
   NAME     name under which to store the new key, defaults to key-<timestamp>
 
   AMOUNT   Amount XML to be transferred to the new account (default 20)
 
 
-## pay
+## Command: pay
 
 Pay an amount to another account
 
 usage: cliste pay [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   RECEIVER     Receiver account key (public or secret) or key name in keys.properties
 
   AMOUNT       Amount you are paying
@@ -152,18 +160,20 @@ positional arguments:
   MEMO         Optional text memo
 
 
-## preparePaymentTX
+## Command: preparePaymentTX
 
 Prepare an XDR transaction for a payment. Prints the
  XDR of the transaction envelope so you can send it to the signees.
 
 usage: cliste preparePaymentTX [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   RECEIVER     Receiver account key (public or secret) or key name in keys.properties
 
   AMOUNT       Amount you are paying
@@ -173,17 +183,19 @@ positional arguments:
   MEMO         Optional text memo
 
 
-## txInfo
+## Command: txInfo
 
 Show information about an XDR transaction envelope.
 
 usage: cliste txInfo [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   RECEIVER     Receiver account key (public or secret) or key name in keys.properties
 
   AMOUNT       Amount you are paying
@@ -193,17 +205,19 @@ positional arguments:
   MEMO         Optional text memo
 
 
-## signTx
+## Command: signTx
 
 Add a signature to a transaction envelope in XDR form.
 
 usage: cliste signTx [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   RECEIVER     Receiver account key (public or secret) or key name in keys.properties
 
   AMOUNT       Amount you are paying
@@ -213,17 +227,19 @@ positional arguments:
   MEMO         Optional text memo
 
 
-## submitTx
+## Command: submitTx
 
 Submit a transaction envelope in XDR form. You should add signatures first using signTx.
 
 usage: cliste submitTx [-h] RECEIVER AMOUNT ASSET-CODE [MEMO]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   RECEIVER     Receiver account key (public or secret) or key name in keys.properties
 
   AMOUNT       Amount you are paying
@@ -233,40 +249,44 @@ positional arguments:
   MEMO         Optional text memo
 
 
-## listPayments
+## Command: listPayments
 
 List trades
 
 usage: cliste listPayments [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## listTrades
+## Command: listTrades
 
 List trades
 
 usage: cliste listTrades [-h] BASE-ASSET COUNTER-ASSET
 
-optional arguments:
+### Optional arguments
+
   -h, --help      show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   BASE-ASSET      Base asset
 
   COUNTER-ASSET   Counter asset
 
 
-## listTradeAggs
+## Command: listTradeAggs
 
 List trade aggregations
 
 usage: cliste listTradeAggs [-h] [--from FROM] [--to TO] [-r RESOLUTION] BASE-ASSET COUNTER-ASSET [OFF-SET]
 
-optional arguments:
+### Optional arguments
+
   -h, --help                show this help message and exit
 
   --from FROM               From time in ms after epoch. Default to now-24h
@@ -277,7 +297,8 @@ optional arguments:
   --resolution RESOLUTION
 
 
-positional arguments:
+### Positional arguments
+
   BASE-ASSET                Base asset
 
   COUNTER-ASSET             Counter asset
@@ -285,31 +306,33 @@ positional arguments:
   OFF-SET                   offset
 
 
-## trust
+## Command: trust
 
 Trust an asset
 
 usage: cliste trust [-h] ASSET-CODE [AMOUNT]
 
-optional arguments:
+### Optional arguments
+
   -h, --help   show this help message and exit
 
 
-positional arguments:
+### Positional arguments
+
   ASSET-CODE   Asset that you want to trust. Must be defined in assets.properties
 
   AMOUNT       Amount you trust the asset with
 
 
-## setOptions
+## Command: setOptions
 
 Set options on an account
 
-usage: cliste setOptions [-h] [--low-threshold LOW_THRESHOLD] [--medium-threshold MEDIUM_THRESHOLD]
-                         [--high-threshold HIGH_THRESHOLD] [--master-key-weight MASTER_KEY_WEIGHT]
-                         [--signer-weight SIGNER_WEIGHT] [--signer-key SIGNER_KEY] [--home-domain HOME_DOMAIN]
+usage: cliste setOptions [-h] [--low-threshold LOW_THRESHOLD] [--medium-threshold MEDIUM_THRESHOLD] [--high-threshold HIGH_THRESHOLD]
+                         [--master-key-weight MASTER_KEY_WEIGHT] [--signer-weight SIGNER_WEIGHT] [--signer-key SIGNER_KEY] [--home-domain HOME_DOMAIN]
 
-optional arguments:
+### Optional arguments
+
   -h, --help                              show this help message and exit
 
   --low-threshold LOW_THRESHOLD           
@@ -327,44 +350,48 @@ optional arguments:
   --home-domain HOME_DOMAIN               
 
 
-## listAssetsOnStellar
+## Command: listAssetsOnStellar
 
 lists all assets on stellar
 
 usage: cliste listAssetsOnStellar [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## feeStats
+## Command: feeStats
 
 Show fee stats
 
 usage: cliste feeStats [-h]
 
-optional arguments:
+### Optional arguments
+
   -h,      show this help message and exit
   --help
 
 
-## help
+## Command: help
 
 Show help for a specific command
 
 usage: cliste help [-h] [COMMAND]
 
-optional arguments:
+### Optional arguments
+
   -h,       show this help message and exit
   --help
 
 
-positional arguments:
+### Positional arguments
+
   COMMAND   name of the command
 
 
-## Configuring CliSte
+# Configuring CliSte
 
 You can configure cliste using two environment variables
 

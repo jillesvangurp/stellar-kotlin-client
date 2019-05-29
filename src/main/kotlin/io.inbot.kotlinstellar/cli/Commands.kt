@@ -57,12 +57,12 @@ private val doHelp: CommandFunction = { context ->
             println("# CliSte -  the Commnand Line Interface for Stellar\n")
             println(renderHelp(CliSteArgs::class, "cliste"))
             println()
-            println("Commands:")
+            println("# Commands\n")
             println(Commands.values().joinToString("\n") { it.helpText })
 
             println(
                 WordUtils.wrap(
-                    """## Configuring CliSte
+                    """# Configuring CliSte
 
 You can configure cliste using two environment variables
 
@@ -467,7 +467,7 @@ enum class Commands(
     ;
 
     val helpText by lazy {
-        """## ${name}
+        """## Command: ${name}
 
 ${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 120) + "\n\n" else ""}${renderHelp(
             clazz,

@@ -27,10 +27,10 @@ fun <T : Any> renderHelp(clazz: KClass<T>, commandName: String): String {
     } catch (e: ShowHelpException) {
         val bos = ByteArrayOutputStream()
         val writer = OutputStreamWriter(bos, StandardCharsets.UTF_8)
-        e.printUserMessage(writer, commandName, 120)
+        e.printUserMessage(writer, commandName, 160)
         writer.flush()
         bos.flush()
-        return bos.toString("utf-8")
+        return bos.toString("utf-8").replace("positional arguments:","### Positional arguments\n").replace("optional arguments:","### Optional arguments\n")
     }
     throw IllegalStateException("cannot render help for $commandName for args class ${clazz.qualifiedName}")
 }
@@ -51,10 +51,10 @@ fun findCommandPos(args: Array<String>): Int {
 
 fun splitOnCommand(args: Array<String>): Pair<Array<String>, Array<String>> {
     val pos = findCommandPos(args)
-    if (pos<args.size - 1) {
-        return Pair(args.copyOfRange(0, pos + 1), args.copyOfRange(pos + 1, args.size))
+    return if (pos<args.size - 1) {
+        Pair(args.copyOfRange(0, pos + 1), args.copyOfRange(pos + 1, args.size))
     } else {
-        return Pair(args, arrayOf())
+        Pair(args, arrayOf())
     }
 }
 
@@ -65,12 +65,12 @@ fun main(args: Array<String>) {
     try {
         val defaultArgs = System.getenv("CLISTE_ARGS")
         val joinedArgs: Array<String>
-        if (StringUtils.isNotBlank(defaultArgs)) {
-            joinedArgs = defaultArgs?.trim()?.split(" ")?.toTypedArray()?.plus(args) ?: args
+        joinedArgs = if (StringUtils.isNotBlank(defaultArgs)) {
+            defaultArgs?.trim()?.split(" ")?.toTypedArray()?.plus(args) ?: args
         } else {
-            joinedArgs = args
+            args
         }
-        if (joinedArgs.size == 0) {
+        if (joinedArgs.isEmpty()) {
             throw SystemExitException("missing options; run cliste help", 1)
         }
         // split so we can pass the command args to the command specific parser without having the main args parser break
@@ -92,7 +92,7 @@ fun main(args: Array<String>) {
         if (e is ShowHelpException) {
             println(
                 """
-            |Cliste Introduction
+            |Cliste
             |
             |CliSte is a simple command line tool to interact with stellar.
             |
