@@ -54,15 +54,15 @@ class HelpArgs(parser: ArgParser) {
 private val doHelp: CommandFunction = { context ->
     withArgs<HelpArgs>(context.commandArgs) {
         if (command == "all") {
-            println("CliSte -  the Commnand Line Interface for Stellar\n")
+            println("# CliSte -  the Commnand Line Interface for Stellar\n")
             println(renderHelp(CliSteArgs::class, "cliste"))
             println()
             println("Commands:")
-            println(Commands.values().map { it.helpText }.joinToString("\n"))
+            println(Commands.values().joinToString("\n") { it.helpText })
 
             println(
                 WordUtils.wrap(
-                    """Configuring CliSte
+                    """## Configuring CliSte
 
 You can configure cliste using two environment variables
 
@@ -467,7 +467,7 @@ enum class Commands(
     ;
 
     val helpText by lazy {
-        """${name.toUpperCase(Locale.ROOT)}
+        """## ${name}
 
 ${if (helpIntroduction.length > 0) WordUtils.wrap(helpIntroduction, 120) + "\n\n" else ""}${renderHelp(
             clazz,

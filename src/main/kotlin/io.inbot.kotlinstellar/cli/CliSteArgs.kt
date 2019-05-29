@@ -13,9 +13,7 @@ private const val defaultUrl = "http://localhost:8000"
 class CliSteArgs(parser: ArgParser) {
     val accountKey by parser.storing("-a", "--account-key",
         help = """Account key of the account for the transaction.
-            |Required for any commands that do transactions on accounts.
-            |
-            |Defaults to the value of the ST_ACCOUNT_KEY environment variable.
+            |Required for any commands that do transactions on accounts. Defaults to the value of the ST_ACCOUNT_KEY environment variable.
             |""".trimMargin()
     ).default<String?>(System.getenv("ST_ACCOUNT_KEY"))
     // cannot access accountKey in default arg for this; so using a lazy to get to the value after parsing is done

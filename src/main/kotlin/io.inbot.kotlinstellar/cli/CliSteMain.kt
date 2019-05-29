@@ -102,7 +102,7 @@ fun main(args: Array<String>) {
             |""".trimMargin()
             )
         }
-        e.printStackTrace()
+//        e.printStackTrace()
         e.printAndExit("cliste")
     }
 }
