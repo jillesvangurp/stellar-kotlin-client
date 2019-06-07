@@ -8,7 +8,7 @@ The plan is to keep on adding convenience methods.
 
 # Future plans
 
-We are currently considering creating a kotlin multi platform project to replace this project. Please refer to this ticket #2 for more details.
+We are currently considering creating a kotlin multi platform project to replace this project. Please refer to this [ticket](#2) for more details.
 
 Meanwhile, we are using this client ourselves and it is perfectly fine for production usage. We'll likely aim to preserve API compatibility for the replacement where possible/relevant. But of course the point of this would be to improve things as well.
 
