@@ -37,7 +37,6 @@ import org.stellar.sdk.responses.operations.OperationResponse
 import org.stellar.sdk.responses.operations.PaymentOperationResponse
 import org.stellar.sdk.responses.tokenAmount
 import org.stellar.sdk.xdr.TransactionEnvelope
-import shadow.okhttp3.OkHttpClient
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
@@ -56,24 +55,19 @@ val nativeXlmAsset = AssetTypeNative()
  */
 class KotlinStellarWrapper(
     val server: Server,
-//    val networkPassphrase: String? = "Standalone Network ; February 2017",
     val minimumBalance: TokenAmount = TokenAmount.of(1, 0),
     val defaultMaxTries: Int = 10,
     val network: Network = Network("Standalone Network ; February 2017")
 ) {
-
-    val httpClient: OkHttpClient
-
-    init {
-        httpClient = server.submitHttpClient
-    }
-
     /**
-     * the keypair associated with the root account; only available if you have a passphrase
+     * the keypair associated with the root account; should only be used on standalone networks.
      */
     val rootKeyPair by lazy {
-        // FIXME detect publiu/testnet and return null
-        KeyPair.fromSecretSeed(network.networkId)
+        if (network.networkPassphrase == Network.PUBLIC.networkPassphrase || network.networkPassphrase == Network.TESTNET.networkPassphrase) {
+            null
+        } else {
+            KeyPair.fromSecretSeed(network.networkId)
+        }
     }
 
     fun testConnection(): Boolean {
@@ -103,13 +97,18 @@ class KotlinStellarWrapper(
         sourceAccount: KeyPair? = null,
         newAccount: KeyPair = KeyPair.random(),
         maxTries: Int = defaultMaxTries,
-        signers: Array<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair)
+        signers: Array<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair ?: throw IllegalStateException("signers are required if not running on a standalone net"))
     ): KeyPair {
         if (amountLumen < minimumBalance) {
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
 
-        server.doTransaction(network, sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
+        val account = when {
+            sourceAccount != null -> sourceAccount
+            rootKeyPair != null -> rootKeyPair!!
+            else -> throw IllegalStateException("source account is required when not running on a standAlone network")
+        }
+        server.doTransaction(network, account, maxTries = maxTries, signers = signers) {
             addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))

@@ -139,11 +139,10 @@ class CreateAccountArgs(parser: ArgParser) {
 
 private val doCreateAccount: CommandFunction = { context ->
     withArgs<CreateAccountArgs>(context.commandArgs) {
-        val signers: Array<KeyPair>
-        if (context.hasAccountKeyPair) {
-            signers = arrayOf(context.accountKeyPair)
+        val signers = if (context.hasAccountKeyPair) {
+            arrayOf(context.accountKeyPair)
         } else {
-            signers = arrayOf(context.wrapper.rootKeyPair)
+            arrayOf(context.wrapper.rootKeyPair ?: throw IllegalArgumentException("Specify an account"))
         }
         // if no pair, it will try to bootstrap a pair
         val existingKeyPair = context.parseOrLookupKeyPair(name)
