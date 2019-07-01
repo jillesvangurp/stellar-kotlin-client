@@ -76,7 +76,6 @@ class KotlinStellarWrapper(
         KeyPair.fromSecretSeed(network.networkId)
     }
 
-
     fun testConnection(): Boolean {
         val root = server.root()
         return root.coreLatestLedger > 0 && root.historyLatestLedger == root.coreLatestLedger
@@ -110,7 +109,7 @@ class KotlinStellarWrapper(
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
 
-        server.doTransaction(network,sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
+        server.doTransaction(network, sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
             addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
@@ -135,7 +134,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        return server.doTransaction(network,account, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network, account, maxTries = maxTries, signers = signers) {
             addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.amount).build())
         }
     }
@@ -146,7 +145,7 @@ class KotlinStellarWrapper(
         signers: Array<KeyPair> = arrayOf(account),
         block: SetOptionsOperation.Builder.() -> Unit
     ): SubmitTransactionResponse {
-        return server.doTransaction(network,account, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network, account, maxTries = maxTries, signers = signers) {
             val setOptionsOperationBuilder = SetOptionsOperation.Builder()
             block.invoke(setOptionsOperationBuilder)
             addOperation(
@@ -194,7 +193,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(network,account, maxTries, signers = signers) {
+        val response = server.doTransaction(network, account, maxTries, signers = signers) {
             logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
             if (passive) {
                 addOperation(
@@ -255,7 +254,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(network,account, maxTries, signers) {
+        val response = server.doTransaction(network, account, maxTries, signers) {
             logger.info { "delete offer ${offerResponse.id}" }
             addOperation(
                 ManageSellOfferOperation.Builder(
@@ -279,7 +278,7 @@ class KotlinStellarWrapper(
     ): SubmitTransactionResponse? {
         val records = server.offers().forAccount(account).limit(limit).execute().records
         if (records.size > 0) {
-            return server.doTransaction(network,account, maxTries, signers = signers) {
+            return server.doTransaction(network, account, maxTries, signers = signers) {
                 records.forEach {
                     addOperation(
                         ManageSellOfferOperation.Builder(it.selling, it.buying, "0", it.price)
@@ -320,7 +319,7 @@ class KotlinStellarWrapper(
                 throw IllegalArgumentException("validation failure: ${validationResponse.second}")
             }
         }
-        return server.doTransaction(network,sender, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network, sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (StringUtils.isNotBlank(memo)) {
                 if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {

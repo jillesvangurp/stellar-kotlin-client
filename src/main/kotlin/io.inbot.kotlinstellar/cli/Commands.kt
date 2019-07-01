@@ -221,7 +221,7 @@ class XdrArgs(parser: ArgParser) {
 
 private val doSignTx: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
-        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class),context.wrapper.network)
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class), context.wrapper.network)
         context.signers.forEach {
             tx.sign(it)
         }
@@ -266,7 +266,7 @@ private val doTxInfo: CommandFunction = { context ->
 
 private val doSubmitTx: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
-        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class),context.wrapper.network)
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class), context.wrapper.network)
         val txResponse = context.server.submitTransaction(tx)
         if (txResponse.isSuccess) {
             println("OK")

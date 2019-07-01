@@ -51,7 +51,7 @@ fun findCommandPos(args: Array<String>): Int {
 
 fun splitOnCommand(args: Array<String>): Pair<Array<String>, Array<String>> {
     val pos = findCommandPos(args)
-    return if (pos<args.size - 1) {
+    return if (pos <args.size - 1) {
         Pair(args.copyOfRange(0, pos + 1), args.copyOfRange(pos + 1, args.size))
     } else {
         Pair(args, arrayOf())

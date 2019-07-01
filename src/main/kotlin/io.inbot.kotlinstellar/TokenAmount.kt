@@ -30,7 +30,7 @@ Represents amounts in Stellar. Stellar uses 64 bit longs to store values. To fak
 data class TokenAmount private constructor(val tokens: Long, val stroops: Long, val asset: Asset?) {
     val totalStroops by lazy { tokens * stroopsPerToken + stroops }
 
-    val bigDecimalValue by lazy { BigDecimal.valueOf(tokens) + BigDecimal.valueOf(stroops). times(BigDecimal.valueOf(1).divide(BigDecimal.valueOf(
+    val bigDecimalValue by lazy { BigDecimal.valueOf(tokens) + BigDecimal.valueOf(stroops).times(BigDecimal.valueOf(1).divide(BigDecimal.valueOf(
         stroopsPerToken))) }
     val doubleValue by lazy { bigDecimalValue.toDouble() }
 
@@ -44,7 +44,7 @@ data class TokenAmount private constructor(val tokens: Long, val stroops: Long, 
         if (tokens < 0) {
             throw IllegalArgumentException("tokens should be positive, was $tokens")
         }
-        if (stroops>Long.MAX_VALUE - tokens * stroopsPerToken) {
+        if (stroops> Long.MAX_VALUE - tokens * stroopsPerToken) {
             throw IllegalArgumentException("$totalStroops is outside the maximum supported range of ${Long.MAX_VALUE}")
         }
     }

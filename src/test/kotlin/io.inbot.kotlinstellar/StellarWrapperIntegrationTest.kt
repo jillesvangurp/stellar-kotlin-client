@@ -1,11 +1,6 @@
-package io.inbot.ethclient.stellar
+package io.inbot.kotlinstellar
 
 import com.google.common.math.LongMath
-import io.inbot.kotlinstellar.KotlinStellarWrapper
-import io.inbot.kotlinstellar.TokenAmount
-import io.inbot.kotlinstellar.nativeXlmAsset
-import io.inbot.kotlinstellar.tokenAmount
-import io.inbot.kotlinstellar.xdrDecodeString
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
@@ -87,7 +82,7 @@ class StellarWrapperIntegrationTest {
             proofTheIssuerCanIssueNoMore.getTransactionResult().result.results.forEach {
                 println("${it.tr.discriminant.name} ${it.tr.setOptionsResult.discriminant.name} ")
             }
-            logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
+            logger.info(proofTheIssuerCanIssueNoMore.resultXdr.or(""))
         } else {
             // this means accounts above already exist on your test chain
             // to start from scratch, you have to wipe that out
@@ -155,7 +150,8 @@ class StellarWrapperIntegrationTest {
         val theBuyer = wrapper.createAccount(TokenAmount.of(1000.0))
         wrapper.trustAsset(theBuyer, bpt, tokenCap)
 
-        wrapper.placeOffer(distributionPair,
+        wrapper.placeOffer(
+            distributionPair,
             tokenAmount(500.0, bpt),
             tokenAmount(1000.0, nativeXlmAsset)
         )
@@ -281,7 +277,7 @@ class StellarWrapperIntegrationTest {
 
         val (hash, xdr) = wrapper.preparePaymentTransaction(alice, bob, tokenAmount(10.0))
 
-        val envelope = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val envelope = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class), wrapper.network)
         envelope.sign(hash.toByteArray(StandardCharsets.UTF_8))
         envelope.sign(alice)
         wrapper.server.submitTransaction(envelope)
@@ -292,7 +288,7 @@ class StellarWrapperIntegrationTest {
 
 //        println(wrapper.server.accounts().account(alice).describe())
 
-        val bobsTransaction = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val bobsTransaction = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class), wrapper.network)
         bobsTransaction.sign(bob)
         wrapper.server.submitTransaction(bobsTransaction)
 
