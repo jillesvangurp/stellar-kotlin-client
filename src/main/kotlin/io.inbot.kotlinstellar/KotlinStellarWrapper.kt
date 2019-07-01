@@ -56,30 +56,15 @@ val nativeXlmAsset = AssetTypeNative()
  */
 class KotlinStellarWrapper(
     val server: Server,
-    val networkPassphrase: String? = "Standalone Network ; February 2017",
+//    val networkPassphrase: String? = "Standalone Network ; February 2017",
     val minimumBalance: TokenAmount = TokenAmount.of(1, 0),
     val defaultMaxTries: Int = 10,
-    val stellarNetwork: StellarNetwork = StellarNetwork.standalone
+    val network: Network = Network("Standalone Network ; February 2017")
 ) {
 
-    val network: Network?
     val httpClient: OkHttpClient
 
     init {
-        when (stellarNetwork) {
-            StellarNetwork.standalone -> {
-                network = Network(networkPassphrase)
-                Network.use(network)
-            }
-            StellarNetwork.testnet -> {
-                network = null
-                Network.useTestNetwork()
-            }
-            StellarNetwork.public -> {
-                network = null
-                Network.usePublicNetwork()
-            }
-        }
         httpClient = server.submitHttpClient
     }
 
@@ -87,17 +72,10 @@ class KotlinStellarWrapper(
      * the keypair associated with the root account; only available if you have a passphrase
      */
     val rootKeyPair by lazy {
-        if (networkPassphrase == null && stellarNetwork == StellarNetwork.standalone) {
-            throw IllegalArgumentException("You need to set networkPassphrase if you want root account access. This won't work on the testnet or public net for obvious reasons")
-        } else {
-            if (network != null) {
-                logger.info { "using standalone network" }
-                KeyPair.fromSecretSeed(network.networkId)
-            } else {
-                throw IllegalStateException("cannot use root keypair when not on standalone network")
-            }
-        }
+        // FIXME detect publiu/testnet and return null
+        KeyPair.fromSecretSeed(network.networkId)
     }
+
 
     fun testConnection(): Boolean {
         val root = server.root()
@@ -132,7 +110,7 @@ class KotlinStellarWrapper(
             throw IllegalArgumentException("opening balance should be >= $minimumBalance XLM")
         }
 
-        server.doTransaction(sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
+        server.doTransaction(network,sourceAccount ?: rootKeyPair, maxTries = maxTries, signers = signers) {
             addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
@@ -157,7 +135,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        return server.doTransaction(account, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network,account, maxTries = maxTries, signers = signers) {
             addOperation(ChangeTrustOperation.Builder(asset, maxTrustedAmount.amount).build())
         }
     }
@@ -168,7 +146,7 @@ class KotlinStellarWrapper(
         signers: Array<KeyPair> = arrayOf(account),
         block: SetOptionsOperation.Builder.() -> Unit
     ): SubmitTransactionResponse {
-        return server.doTransaction(account, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network,account, maxTries = maxTries, signers = signers) {
             val setOptionsOperationBuilder = SetOptionsOperation.Builder()
             block.invoke(setOptionsOperationBuilder)
             addOperation(
@@ -216,7 +194,7 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(account, maxTries, signers = signers) {
+        val response = server.doTransaction(network,account, maxTries, signers = signers) {
             logger.info { "place offer to sell ${sellingAmount.amount} ${selling.assetCode} for $price ${buying.assetCode}/${selling.assetCode} or ${price.inverse()} ${selling.assetCode}/${buying.assetCode}" }
             if (passive) {
                 addOperation(
@@ -277,10 +255,15 @@ class KotlinStellarWrapper(
         maxTries: Int = defaultMaxTries,
         signers: Array<KeyPair> = arrayOf(account)
     ): SubmitTransactionResponse {
-        val response = server.doTransaction(account, maxTries, signers) {
+        val response = server.doTransaction(network,account, maxTries, signers) {
             logger.info { "delete offer ${offerResponse.id}" }
             addOperation(
-                ManageSellOfferOperation.Builder(offerResponse.selling, offerResponse.buying, newAmountSelling, newPrice)
+                ManageSellOfferOperation.Builder(
+                    offerResponse.selling,
+                    offerResponse.buying,
+                    newAmountSelling,
+                    newPrice
+                )
                     .setOfferId(offerResponse.id)
                     .build()
             )
@@ -296,7 +279,7 @@ class KotlinStellarWrapper(
     ): SubmitTransactionResponse? {
         val records = server.offers().forAccount(account).limit(limit).execute().records
         if (records.size > 0) {
-            return server.doTransaction(account, maxTries, signers = signers) {
+            return server.doTransaction(network,account, maxTries, signers = signers) {
                 records.forEach {
                     addOperation(
                         ManageSellOfferOperation.Builder(it.selling, it.buying, "0", it.price)
@@ -331,12 +314,13 @@ class KotlinStellarWrapper(
         validate: Boolean = true
     ): SubmitTransactionResponse {
         if (validate) {
-            val validationResponse = isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
+            val validationResponse =
+                isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
             if (!validationResponse.first) {
                 throw IllegalArgumentException("validation failure: ${validationResponse.second}")
             }
         }
-        return server.doTransaction(sender, maxTries = maxTries, signers = signers) {
+        return server.doTransaction(network,sender, maxTries = maxTries, signers = signers) {
             addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
             if (StringUtils.isNotBlank(memo)) {
                 if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
@@ -360,13 +344,14 @@ class KotlinStellarWrapper(
         baseFee: Int = 100
     ): PreparedTransaction {
         if (validate) {
-            val validationResponse = isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
+            val validationResponse =
+                isPaymentPossible(sender, receiver, TokenAmount.ofStroops(amount.totalStroops, asset))
             if (!validationResponse.first) {
                 throw IllegalArgumentException("validation failure: ${validationResponse.second}")
             }
         }
 
-        val txBuilder = Transaction.Builder(server.accounts().account(sender))
+        val txBuilder = Transaction.Builder(server.accounts().account(sender), network)
             .setOperationFee(baseFee)
             .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
         if (StringUtils.isNotBlank(memo)) {
@@ -380,7 +365,10 @@ class KotlinStellarWrapper(
         transactionEnvelope.tx = tx.toXdr()
         transactionEnvelope.signatures = arrayOf()
 
-        return PreparedTransaction(Base64.getEncoder().encode(tx.hash()).toString(StandardCharsets.UTF_8), xdrEncode(transactionEnvelope))
+        return PreparedTransaction(
+            Base64.getEncoder().encode(tx.hash()).toString(StandardCharsets.UTF_8),
+            xdrEncode(transactionEnvelope)
+        )
     }
 
     private fun <T : Response> pageSequence(
@@ -426,23 +414,6 @@ class KotlinStellarWrapper(
             }
         }
     }
-
-//    fun accountsSequence(
-//        cursor: String = "now",
-//        fetchSize: Int = 10,
-//        endless: Boolean = false,
-//        pollingIntervalMs: Long = 5000,
-//        sleepOnThrottle: Long
-//
-//    ): Sequence<AccountResponse> {
-//        val fetch = { c: String ->
-//            val builder = server.accounts()
-//            builder.cursor(c).limit(fetchSize).execute()
-//        }
-//
-//        return pageSequence({ it -> it.pagingToken }, fetch, cursor, endless, pollingIntervalMs, sleepOnThrottle)
-//            .flatMap { it.records.asSequence() }
-//    }
 
     fun offersSequence(
         account: KeyPair? = null,
@@ -600,6 +571,7 @@ class KotlinStellarWrapper(
             null
         }
     }
+
     fun trades(
         baseAsset: Asset? = null,
         counterAsset: Asset? = null,
@@ -642,7 +614,8 @@ class KotlinStellarWrapper(
         descending: Boolean = false,
         offSet: Long = 0L
     ): Sequence<TradeAggregationResponse> {
-        val builder = server.tradeAggregations(baseAsset, counterAsset, from.toEpochMilli(), to.toEpochMilli(), resolution.resolution,
+        val builder = server.tradeAggregations(
+            baseAsset, counterAsset, from.toEpochMilli(), to.toEpochMilli(), resolution.resolution,
             offSet
         )
         if (cursor != null) {

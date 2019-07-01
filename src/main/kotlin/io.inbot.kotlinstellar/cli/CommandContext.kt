@@ -2,9 +2,11 @@ package io.inbot.kotlinstellar.cli
 
 import com.xenomachina.argparser.SystemExitException
 import io.inbot.kotlinstellar.KotlinStellarWrapper
+import io.inbot.kotlinstellar.StellarNetwork
 import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
+import org.stellar.sdk.Network
 import org.stellar.sdk.Server
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.requests.ErrorResponse
@@ -39,7 +41,13 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) : Aut
             }
         }
         server = Server(args.horizonUrl)
-        wrapper = KotlinStellarWrapper(server, stellarNetwork = args.stellarNetwork, networkPassphrase = args.standAloneNetworkPassphrase)
+        val network = when(args.stellarNetwork) {
+            StellarNetwork.public -> Network.PUBLIC
+            StellarNetwork.testnet -> Network.TESTNET
+            StellarNetwork.standalone -> Network(args.standAloneNetworkPassphrase)
+        }
+
+        wrapper = KotlinStellarWrapper(server,network = network)
     }
     val hasAccountKeyPair by lazy { accountKeyPairInternal != null }
     val accountKeyPair by lazy { accountKeyPairInternal ?: throw SystemExitException("Operation ${args.commandName} requires --account-key", 1) }

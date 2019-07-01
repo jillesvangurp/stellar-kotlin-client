@@ -221,7 +221,7 @@ class XdrArgs(parser: ArgParser) {
 
 private val doSignTx: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
-        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class),context.wrapper.network)
         context.signers.forEach {
             tx.sign(it)
         }
@@ -247,7 +247,7 @@ private fun stringify(o: Operation): String {
 
 private val doTxInfo: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
-        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class), context.wrapper.network)
         val ops = tx.operations
             .map { stringify(it) }
             .joinToString("\n")
@@ -266,7 +266,7 @@ private val doTxInfo: CommandFunction = { context ->
 
 private val doSubmitTx: CommandFunction = { context ->
     withArgs<XdrArgs>(context.commandArgs) {
-        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class))
+        val tx = Transaction.fromEnvelopeXdr(xdrDecodeString(xdr, TransactionEnvelope::class),context.wrapper.network)
         val txResponse = context.server.submitTransaction(tx)
         if (txResponse.isSuccess) {
             println("OK")
@@ -408,6 +408,7 @@ ${feeStats.p99} p99
     }
 }
 
+@Suppress("unused")
 enum class Commands(
     val command: CommandFunction,
     val clazz: KClass<*> = NoArgs::class,

@@ -62,7 +62,7 @@ fun AccountResponse.Balance.balanceAmount(): TokenAmount {
 }
 
 fun SubmitTransactionResponse.getTransactionResult(): TransactionResult {
-    return xdrDecodeString(resultXdr, TransactionResult::class)
+    return xdrDecodeString(resultXdr.orNull(), TransactionResult::class)
 }
 
 fun SubmitTransactionResponse.describe(): String {

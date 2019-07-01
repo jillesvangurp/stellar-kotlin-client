@@ -131,6 +131,7 @@ fun Price.rate(): Double {
  * @return the response
  */
 fun Server.doTransaction(
+    network: Network,
     forAccount: KeyPair,
     maxTries: Int,
     signers: Array<KeyPair> = arrayOf(forAccount),
@@ -141,6 +142,7 @@ fun Server.doTransaction(
 ): SubmitTransactionResponse {
 
     val response = doTransactionInternal(
+        network,
         0,
         maxTries,
         forAccount,
@@ -155,6 +157,7 @@ fun Server.doTransaction(
 }
 
 private fun Server.doTransactionInternal(
+    network: Network,
     tries: Int,
     maxTries: Int,
     keyPair: KeyPair,
@@ -173,7 +176,7 @@ private fun Server.doTransactionInternal(
     val currentSequenceNumber = sourceAccount.sequenceNumber
 
     Validate.isTrue(maxTries >= 0, "maxTries should be positive")
-    val builder = Transaction.Builder(sourceAccount)
+    val builder = Transaction.Builder(sourceAccount, network)
     builder.setTimeout(transactionTimeout)
     builder.setOperationFee(baseFee)
 
@@ -195,6 +198,7 @@ private fun Server.doTransactionInternal(
 
                 // retry and get latest sequence number
                 return doTransactionInternal(
+                    network,
                     tries + 1,
                     maxTries,
                     keyPair,
@@ -218,6 +222,7 @@ private fun Server.doTransactionInternal(
                 // nothing happened on the blockchain? lets Try again
                 logger.warn { "retrying $tries out of $maxTries because of a timeout" }
                 return doTransactionInternal(
+                    network,
                     tries + 1,
                     maxTries,
                     keyPair,
@@ -242,6 +247,7 @@ private fun Server.doTransactionInternal(
             Thread.sleep(2000)
             logger.warn { "retrying $tries out of $maxTries because of a timeout" }
             return doTransactionInternal(
+                network,
                 tries + 1,
                 maxTries,
                 keyPair,
