@@ -26,20 +26,17 @@ Helper that makes doing common operations against Stellar less boiler plate heav
 
 | Name | Summary |
 |---|---|
-| [&lt;init&gt;](-init-.md) | `KotlinStellarWrapper(server: Server, networkPassphrase: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = "Standalone Network ; February 2017", minimumBalance: `[`TokenAmount`](../-token-amount/index.md)` = TokenAmount.of(1, 0), defaultMaxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 10, stellarNetwork: `[`StellarNetwork`](../-stellar-network/index.md)` = StellarNetwork.standalone)`<br>Helper that makes doing common operations against Stellar less boiler plate heavy. |
+| [&lt;init&gt;](-init-.md) | `KotlinStellarWrapper(server: Server, minimumBalance: `[`TokenAmount`](../-token-amount/index.md)` = TokenAmount.of(1, 0), defaultMaxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 10, network: Network = Network("Standalone Network ; February 2017"))`<br>Helper that makes doing common operations against Stellar less boiler plate heavy. |
 
 ### Properties
 
 | Name | Summary |
 |---|---|
 | [defaultMaxTries](default-max-tries.md) | `val defaultMaxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)<br>default amount of times a transaction is retried in case of conflicts with the sequence number (tx_bad_seq) before failing; default is 10 |
-| [httpClient](http-client.md) | `val httpClient: OkHttpClient` |
 | [minimumBalance](minimum-balance.md) | `val minimumBalance: `[`TokenAmount`](../-token-amount/index.md)<br>minimumBalance for accounts. Currently 20.0 on standalone chaines but cheaper in the public network. |
-| [network](network.md) | `val network: Network?` |
-| [networkPassphrase](network-passphrase.md) | `val networkPassphrase: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`?`<br>if using a standalone chain, provide the password here. This enables you to use the root account for account creation. |
-| [rootKeyPair](root-key-pair.md) | `val rootKeyPair: KeyPair!`<br>the keypair associated with the root account; only available if you have a passphrase |
+| [network](network.md) | `val network: Network` |
+| [rootKeyPair](root-key-pair.md) | `val rootKeyPair: KeyPair?`<br>the keypair associated with the root account; should only be used on standalone networks. |
 | [server](server.md) | `val server: Server`<br>the Stellar Server instance |
-| [stellarNetwork](stellar-network.md) | `val stellarNetwork: `[`StellarNetwork`](../-stellar-network/index.md) |
 
 ### Functions
 
@@ -47,7 +44,7 @@ Helper that makes doing common operations against Stellar less boiler plate heav
 |---|---|
 | [assetsSequence](assets-sequence.md) | `fun assetsSequence(assetIssuer: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, assetCode: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, cursor: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)` = "now", fetchSize: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 200, endless: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)` = false, pollingIntervalMs: `[`Long`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)` = 5000, sleepOnThrottle: `[`Long`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)`): `[`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html)`<AssetResponse>` |
 | [awaitServerIsRunning](await-server-is-running.md) | `fun awaitServerIsRunning(): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html) |
-| [createAccount](create-account.md) | `fun createAccount(amountLumen: `[`TokenAmount`](../-token-amount/index.md)`, memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair)): KeyPair`<br>Create a new account and return the keyPair. |
+| [createAccount](create-account.md) | `fun createAccount(amountLumen: `[`TokenAmount`](../-token-amount/index.md)`, memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair ?: throw IllegalStateException("signers are required if not running on a standalone net"))): KeyPair`<br>Create a new account and return the keyPair. |
 | [deleteOffer](delete-offer.md) | `fun deleteOffer(account: KeyPair, offerResponse: OfferResponse, maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account)): SubmitTransactionResponse` |
 | [deleteOffers](delete-offers.md) | `fun deleteOffers(account: KeyPair, maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account), limit: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 200): SubmitTransactionResponse?` |
 | [isPaymentPossible](is-payment-possible.md) | `fun isPaymentPossible(sender: KeyPair, receiver: KeyPair, tokenAmount: `[`TokenAmount`](../-token-amount/index.md)`): `[`Pair`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html)`<`[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)`, `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`>` |

@@ -2,7 +2,7 @@
 
 # &lt;init&gt;
 
-`KotlinStellarWrapper(server: Server, networkPassphrase: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = "Standalone Network ; February 2017", minimumBalance: `[`TokenAmount`](../-token-amount/index.md)` = TokenAmount.of(1, 0), defaultMaxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 10, stellarNetwork: `[`StellarNetwork`](../-stellar-network/index.md)` = StellarNetwork.standalone)`
+`KotlinStellarWrapper(server: Server, minimumBalance: `[`TokenAmount`](../-token-amount/index.md)` = TokenAmount.of(1, 0), defaultMaxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 10, network: Network = Network("Standalone Network ; February 2017"))`
 
 Helper that makes doing common operations against Stellar less boiler plate heavy.
 

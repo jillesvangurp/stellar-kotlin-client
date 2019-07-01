@@ -2,11 +2,11 @@
 
 # rootKeyPair
 
-`val rootKeyPair: KeyPair!`
+`val rootKeyPair: KeyPair?`
 
-the keypair associated with the root account; only available if you have a passphrase
+the keypair associated with the root account; should only be used on standalone networks.
 
 **Getter**
 
-the keypair associated with the root account; only available if you have a passphrase
+the keypair associated with the root account; should only be used on standalone networks.
 

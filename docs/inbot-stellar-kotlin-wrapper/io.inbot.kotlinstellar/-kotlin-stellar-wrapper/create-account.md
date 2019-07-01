@@ -2,7 +2,7 @@
 
 # createAccount
 
-`fun createAccount(amountLumen: `[`TokenAmount`](../-token-amount/index.md)`, memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair)): KeyPair`
+`fun createAccount(amountLumen: `[`TokenAmount`](../-token-amount/index.md)`, memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, sourceAccount: KeyPair? = null, newAccount: KeyPair = KeyPair.random(), maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = if (sourceAccount != null) arrayOf(sourceAccount) else arrayOf(rootKeyPair ?: throw IllegalStateException("signers are required if not running on a standalone net"))): KeyPair`
 
 Create a new account and return the keyPair.
 

@@ -2,4 +2,4 @@
 
 # network
 
-`val network: Network?`
+`val network: Network`
