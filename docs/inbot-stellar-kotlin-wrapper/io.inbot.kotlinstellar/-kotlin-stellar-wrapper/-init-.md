@@ -10,8 +10,8 @@ Helper that makes doing common operations against Stellar less boiler plate heav
 
 `server` - the Stellar Server instance
 
-`networkPassphrase` - if using a standalone chain, provide the password here. This enables you to use the root account for account creation.
-
 `minimumBalance` - minimumBalance for accounts. Currently 20.0 on standalone chaines but cheaper in the public network.
+
+`network` - Network instance of the network you are using. Network.TESTNET, Network.PUBLIC or a standalone network with the correct networkPassphrase. Defaults to a Network for "Standalone Network ; February 2017"
 
 `defaultMaxTries` - default amount of times a transaction is retried in case of conflicts with the sequence number (tx_bad_seq) before failing; default is 10

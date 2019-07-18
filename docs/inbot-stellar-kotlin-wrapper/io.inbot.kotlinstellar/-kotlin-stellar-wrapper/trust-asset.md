@@ -16,6 +16,8 @@ Create a trustline to an asset.
 
 `maxTries` - maximum amount of times to retry the transaction in case of conflicst; default is 3
 
+`signers` - list of signers, defaults to using the account key pair
+
 **Return**
 transaction response
 

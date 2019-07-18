@@ -8,15 +8,21 @@ Create a new account and return the keyPair.
 
 ### Parameters
 
-`opening` - balance. Needs to be &gt;= the minimum balance for your network.
+`amountLumen` - the token amount
 
 `memo` - optional string memo
 
-`maxTries` - maximum amount of times to retry the transaction in case of conflicst
-
-`sourceAccount` - account that creates the newAccount. If null, the rootAccount will be used.
+`sourceAccount` - account that creates the newAccount. If null, the root keypair of your standalone network will be used in case you are using a Standalone network.
 
 `newAccount` - account that will be created; defaults to a random key pair
+
+`maxTries` - maximum amount of times to retry the transaction in case of conflicst
+
+`signers` - list of signers, defaults to using either the sourceAccount or the rootKeyPair in case you are using a standalone network. Not providing a sourceAccount if you are not on a standalone network results in an exception.
+
+### Exceptions
+
+`IllegalStateException` - if you don't provide a sourceAccount and are not on a standalone network where we can use the rootKeypair associated with the passphrase.
 
 **Return**
 the key pair of the created account
