@@ -49,8 +49,8 @@ val nativeXlmAsset = AssetTypeNative()
 /**
  * Helper that makes doing common operations against Stellar less boiler plate heavy.
  * @param server the Stellar Server instance
- * @param networkPassphrase if using a standalone chain, provide the password here. This enables you to use the root account for account creation.
  * @param minimumBalance minimumBalance for accounts. Currently 20.0 on standalone chaines but cheaper in the public network.
+ * @param network Network instance of the network you are using. Network.TESTNET, Network.PUBLIC or a standalone network with the correct networkPassphrase. Defaults to a Network for "Standalone Network ; February 2017"
  * @param defaultMaxTries default amount of times a transaction is retried in case of conflicts with the sequence number (tx_bad_seq) before failing; default is 10
  */
 class KotlinStellarWrapper(
@@ -84,12 +84,14 @@ class KotlinStellarWrapper(
 
     /**
      * Create a new account and return the keyPair.
-     * @param opening balance. Needs to be >= the minimum balance for your network.
+     * @param amountLumen the token amount
      * @param memo optional string memo
-     * @param maxTries maximum amount of times to retry the transaction in case of conflicst
-     * @param sourceAccount account that creates the newAccount. If null, the rootAccount will be used.
+     * @param sourceAccount account that creates the newAccount. If null, the root keypair of your standalone network will be used in case you are using a Standalone network.
      * @param newAccount account that will be created; defaults to a random key pair
+     * @param maxTries maximum amount of times to retry the transaction in case of conflicst
+     * @param signers list of signers, defaults to using either the sourceAccount or the rootKeyPair in case you are using a standalone network. Not providing a sourceAccount if you are not on a standalone network results in an exception.
      * @return the key pair of the created account
+     * @throws IllegalStateException if you don't provide a sourceAccount and are not on a standalone network where we can use the rootKeypair associated with the passphrase.
      */
     fun createAccount(
         amountLumen: TokenAmount,
@@ -124,6 +126,7 @@ class KotlinStellarWrapper(
      * @param asset the asset
      * @param maxTrustedAmount maximum amount to which you trust the asset
      * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
+     * @param signers list of signers, defaults to using the account key pair
      * @return transaction response
      */
     fun trustAsset(
@@ -299,6 +302,7 @@ class KotlinStellarWrapper(
      * @param asset the asset
      * @param memo optinoal text memo
      * @param maxTries maximum amount of times to retry the transaction in case of conflicst; default is 3
+     * @param signers list of signers, defaults to using the account key pair
      * @return transaction response
      */
     fun pay(
@@ -519,7 +523,7 @@ class KotlinStellarWrapper(
             page
         }
         val pageSequence = pageSequence<OperationResponse>(
-            { it -> it.pagingToken }, fetchPageFunction,
+            { it.pagingToken }, fetchPageFunction,
             cursor, endless, pollingIntervalMs, 5000
         )
 
@@ -575,6 +579,7 @@ class KotlinStellarWrapper(
         counterAsset: Asset? = null,
         offerId: String? = null,
         account: KeyPair? = null,
+        publicKey: String? = account?.accountId,
         cursor: String? = null,
         limit: Int = 20,
         descending: Boolean = false
@@ -590,7 +595,7 @@ class KotlinStellarWrapper(
             builder.offerId(offerId)
         }
         if (account != null) {
-            builder.forAccount(account.accountId)
+            builder.forAccount(publicKey)
         }
         if (cursor != null) {
             builder.cursor(cursor)
