@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.util.Properties
 
 class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) : AutoCloseable {
+
     private val accountKeyPairInternal: KeyPair?
     val server: Server
     val wrapper: KotlinStellarWrapper
@@ -96,7 +97,7 @@ class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) : Aut
         if (issuer == null) {
             throw IllegalArgumentException("no such asset defined. Use cliste ${Commands.defineAsset.name} to define the asset")
         } else {
-            return Asset.createNonNativeAsset(code, KeyPair.fromAccountId(issuer))
+            return Asset.createNonNativeAsset(code, issuer)
         }
     }
 

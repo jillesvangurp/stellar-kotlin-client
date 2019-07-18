@@ -109,7 +109,7 @@ class KotlinStellarWrapper(
             else -> throw IllegalStateException("source account is required when not running on a standAlone network")
         }
         server.doTransaction(network, account, maxTries = maxTries, signers = signers) {
-            addOperation(CreateAccountOperation.Builder(newAccount, amountLumen.amount).build())
+            addOperation(CreateAccountOperation.Builder(newAccount.accountId, amountLumen.amount).build())
             if (memo != null) {
                 addMemo(Memo.text(memo))
             }
@@ -275,7 +275,7 @@ class KotlinStellarWrapper(
         signers: Array<KeyPair> = arrayOf(account),
         limit: Int = 200
     ): SubmitTransactionResponse? {
-        val records = server.offers().forAccount(account).limit(limit).execute().records
+        val records = server.offers().forAccount(account.accountId).limit(limit).execute().records
         if (records.size > 0) {
             return server.doTransaction(network, account, maxTries, signers = signers) {
                 records.forEach {
@@ -319,7 +319,7 @@ class KotlinStellarWrapper(
             }
         }
         return server.doTransaction(network, sender, maxTries = maxTries, signers = signers) {
-            addOperation(PaymentOperation.Builder(receiver, asset, amount.amount).build())
+            addOperation(PaymentOperation.Builder(receiver.accountId, asset, amount.amount).build())
             if (StringUtils.isNotBlank(memo)) {
                 if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
                     throw IllegalStateException("Memo exceeds limit of 28 bytes")
@@ -349,9 +349,9 @@ class KotlinStellarWrapper(
             }
         }
 
-        val txBuilder = Transaction.Builder(server.accounts().account(sender), network)
+        val txBuilder = Transaction.Builder(server.accounts().account(sender.accountId), network)
             .setOperationFee(baseFee)
-            .addOperation(PaymentOperation.Builder(receiver, asset, amount.toString()).build())
+            .addOperation(PaymentOperation.Builder(receiver.accountId, asset, amount.toString()).build())
         if (StringUtils.isNotBlank(memo)) {
             if (memo!!.toByteArray(StandardCharsets.UTF_8).size > 28) {
                 throw IllegalStateException("Memo exceeds limit of 28 bytes")
@@ -424,7 +424,7 @@ class KotlinStellarWrapper(
     ): Sequence<OfferResponse> {
         val fetch = { c: String ->
             val builder = server.offers()
-            if (account != null) builder.forAccount(account)
+            if (account != null) builder.forAccount(account.accountId)
             builder.cursor(c).limit(fetchSize).execute()
         }
 
@@ -444,7 +444,7 @@ class KotlinStellarWrapper(
     ): Sequence<OperationResponse> {
         val fetch = { c: String ->
             val builder = server.operations()
-            if (account != null) builder.forAccount(account)
+            if (account != null) builder.forAccount(account.accountId)
             if (ledger != null) builder.forLedger(ledger)
 
             builder.cursor(c).limit(fetchSize).execute()
@@ -466,7 +466,7 @@ class KotlinStellarWrapper(
     ): Sequence<TransactionResponse> {
         val fetch = { c: String ->
             val builder = server.transactions()
-            if (account != null) builder.forAccount(account)
+            if (account != null) builder.forAccount(account.accountId)
             if (ledger != null) builder.forLedger(ledger)
             builder.cursor(c).limit(fetchSize).execute()
         }
@@ -511,7 +511,7 @@ class KotlinStellarWrapper(
 
         val fetchPageFunction = { nextCursor: String ->
             val builder = server.payments()
-            if (account != null) builder.forAccount(account)
+            if (account != null) builder.forAccount(account.accountId)
             if (ledger != null) builder.forLedger(ledger)
             if (transactionId != null) builder.forTransaction(transactionId)
             val requestBuilder = builder.limit(fetchSize).cursor(nextCursor)
@@ -590,7 +590,7 @@ class KotlinStellarWrapper(
             builder.offerId(offerId)
         }
         if (account != null) {
-            builder.forAccount(account)
+            builder.forAccount(account.accountId)
         }
         if (cursor != null) {
             builder.cursor(cursor)

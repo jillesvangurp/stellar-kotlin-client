@@ -29,7 +29,7 @@ import kotlin.reflect.KClass
 typealias CommandFunction = (CommandContext) -> Unit
 
 private val doBalance: CommandFunction = { context ->
-    println(context.wrapper.server.accounts().account(context.accountKeyPair).describe())
+    println(context.wrapper.server.accounts().account(context.accountKeyPair.accountId).describe())
 }
 
 class NoArgs(@Suppress("UNUSED_PARAMETER") parser: ArgParser)
@@ -40,8 +40,8 @@ class CommonArgs(parser: ArgParser) {
 
 private val doListOffers: CommandFunction = { context ->
     withArgs<CommonArgs>(context.commandArgs) {
-        println(context.server.offers().forAccount(context.accountKeyPair).limit(limit).execute().records.map {
-            "${it.seller.accountId}: ${it.amount} ${it.selling.assetCode} for ${it.buying.assetCode} at ${it.price}"
+        println(context.server.offers().forAccount(context.accountKeyPair.accountId).limit(limit).execute().records.map {
+            "${it.seller}: ${it.amount} ${it.selling.assetCode} for ${it.buying.assetCode} at ${it.price}"
         }.joinToString("\n"))
     }
 }
@@ -95,7 +95,7 @@ private val doDefineAsset: CommandFunction = { context ->
     withArgs<DefineAssetArgs>(context.commandArgs) {
         val keyPair =
             context.parseOrLookupKeyPair(issuer) ?: throw IllegalArgumentException("$issuer key not found or malformed")
-        Asset.createNonNativeAsset(assetCode, keyPair) // validate we can create the asset
+        Asset.createNonNativeAsset(assetCode, keyPair.accountId) // validate we can create the asset
         context.args.assetProperties.put(assetCode, keyPair.accountId)
         context.save(context.args.assetProperties, context.args.assetPropertiesFileName)
     }
@@ -253,7 +253,7 @@ private val doTxInfo: CommandFunction = { context ->
 
         println(
             """${tx.sequenceNumber} operations:
-            |source account: ${tx.sourceAccount.accountId}
+            |source account: ${tx.sourceAccount}
             |$ops
             |Signatures:
             |${tx.signatures.map {
@@ -335,7 +335,7 @@ private val doListPayments: CommandFunction = { context ->
         runBlocking {
             println("timestamp\tfrom_account\tto_account\tamount\tasset\ttransaction_hash")
             context.wrapper.paymentSequence(context.accountKeyPair, cursor = "0", pollingIntervalMs = 200, fetchSize = 199).forEach { it ->
-                println("${it.createdAt}\t${it.from.accountId}\t${it.to.accountId}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
+                println("${it.createdAt}\t${it.from}\t${it.to}\t${it.amount}\t${it.asset.assetCode}\t${it.transactionHash}")
             }
         }
     }

@@ -30,7 +30,7 @@ fun Transaction.Builder.buildAndSign(vararg pairs: KeyPair): Transaction {
 
 fun Server.findAccount(pair: KeyPair): AccountResponse? {
     return try {
-        accounts().account(pair)
+        accounts().account(pair.accountId)
     } catch (e: ErrorResponse) {
         if (e.code == 404) {
             null
@@ -94,7 +94,7 @@ val Asset.assetCode: String
 
 val Asset.assetIssuer: String?
     get() {
-        return if (this.isNative()) null else (this as AssetTypeCreditAlphaNum).issuer.accountId
+        return if (this.isNative()) null else (this as AssetTypeCreditAlphaNum).issuer
     }
 
 fun Asset.isNative(): Boolean {
@@ -170,7 +170,7 @@ private fun Server.doTransactionInternal(
 ): SubmitTransactionResponse {
     keyPair.validateCanSign()
 
-    val sourceAccount = if (sequenceNumberOverride == null) accounts().account(keyPair) else AccountResponse(keyPair, sequenceNumberOverride)
+    val sourceAccount = if (sequenceNumberOverride == null) accounts().account(keyPair.accountId) else AccountResponse(keyPair.accountId, sequenceNumberOverride)
 
     // building a transaction actually increments this, yikes
     val currentSequenceNumber = sourceAccount.sequenceNumber
@@ -217,7 +217,7 @@ private fun Server.doTransactionInternal(
     } catch (e: SubmitTransactionTimeoutResponseException) {
         if (tries < maxTries) {
             Thread.sleep(1000)
-            val latestAccount = this.accounts().account(sourceAccount.keypair)
+            val latestAccount = this.accounts().account(sourceAccount.accountId)
             if (latestAccount.sequenceNumber == currentSequenceNumber) {
                 // nothing happened on the blockchain? lets Try again
                 logger.warn { "retrying $tries out of $maxTries because of a timeout" }

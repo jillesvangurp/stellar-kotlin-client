@@ -27,7 +27,6 @@ import org.stellar.sdk.responses.balanceAmount
 import org.stellar.sdk.responses.balanceFor
 import org.stellar.sdk.responses.getTransactionResult
 import org.stellar.sdk.responses.tokenAmount
-import org.stellar.sdk.toPublicPair
 import org.stellar.sdk.xdr.TransactionEnvelope
 import java.nio.charset.StandardCharsets
 
@@ -37,7 +36,7 @@ private val logger = KotlinLogging.logger { }
 val sourcePair = KeyPair.fromSecretSeed("SDDPXCR2SO7SUTV4JBQHLWQOP7DPDDRF7XL3GVPQKE6ZINHAIX4ZZFIH")
 val issuerPair = KeyPair.fromSecretSeed("SBD2WR6L5XTRLBWCJJESXZ26RG4JL3SWKM4LASPJCJE4PSOHNDY3KHL4")
 val distributionPair = KeyPair.fromSecretSeed("SC26JT6JWGTPO723TH5HZDUPUJQVWF32GKDEOZ5AFM6XQMPZQ4X5HJPG")
-val bpt = Asset.createNonNativeAsset("bpt", issuerPair.toPublicPair())
+val bpt = Asset.createNonNativeAsset("bpt", issuerPair.accountId)
 
 val tokenCap = TokenAmount.of(LongMath.pow(10, 10), 0)
 
@@ -103,7 +102,7 @@ class StellarWrapperIntegrationTest {
         val newKeyPair = wrapper.createAccount(amountLumen)
 
         try {
-            val newAccount = server.accounts().account(newKeyPair)
+            val newAccount = server.accounts().account(newKeyPair.accountId)
             newAccount.balances[0].balanceAmount() shouldBe amountLumen
         } catch (e: ErrorResponse) {
             logger.info("${e.code} ${e.body}")
@@ -120,7 +119,7 @@ class StellarWrapperIntegrationTest {
 
         wrapper.trustAsset(anotherAccount, bpt, TokenAmount.of(100.0))
         wrapper.pay(distributionPair, anotherAccount, TokenAmount.of(2.0), bpt)
-        server.accounts().account(anotherAccount).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(2.0).amount
+        server.accounts().account(anotherAccount.accountId).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(2.0).amount
     }
 
     @Test
@@ -160,30 +159,30 @@ class StellarWrapperIntegrationTest {
             tokenAmount(5.0, bpt)
         )
 
-        val distAccount = server.accounts().account(distributionPair)
-        val buyerAccount = server.accounts().account(theBuyer)
+        val distAccount = server.accounts().account(distributionPair.accountId)
+        val buyerAccount = server.accounts().account(theBuyer.accountId)
         val bptAmountAfterFirstOffer = buyerAccount.balanceFor(bpt)
         bptAmountAfterFirstOffer?.balanceAmount()?.amount shouldBe tokenAmount(5).amount
         println("distribution has $bptAmountAfterFirstOffer ${distAccount.balanceFor(nativeXlmAsset)}")
         println("buyer has ${buyerAccount.balanceFor(bpt)} ${buyerAccount.balanceFor(nativeXlmAsset)}")
 
-        server.offers().forAccount(theBuyer).execute().records.size shouldBe 0
+        server.offers().forAccount(theBuyer.accountId).execute().records.size shouldBe 0
 
         // lets be unreasonable
         wrapper.placeOffer(theBuyer,
             tokenAmount(10, 0, nativeXlmAsset),
             tokenAmount(50, 0, bpt)
         )
-        server.offers().forAccount(theBuyer).execute().records.size shouldBe 1
+        server.offers().forAccount(theBuyer.accountId).execute().records.size shouldBe 1
         // the offer will not be fulfilled
-        server.accounts().account(theBuyer).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(5).amount
+        server.accounts().account(theBuyer.accountId).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(5).amount
         // try again at a more reasonable rate
-        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer).execute().records[0],
+        wrapper.updateOffer(theBuyer, server.offers().forAccount(theBuyer.accountId).execute().records[0],
             tokenAmount(10, 0, nativeXlmAsset),
             tokenAmount(1, 0, bpt)
         )
 
-        server.accounts().account(theBuyer).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(10).amount // you get more than you bargained for
+        server.accounts().account(theBuyer.accountId).balanceFor(bpt)?.balanceAmount()?.amount shouldBe tokenAmount(10).amount // you get more than you bargained for
 
         // clean up
         wrapper.deleteOffers(theBuyer)
@@ -258,7 +257,7 @@ class StellarWrapperIntegrationTest {
     }
 
     fun printAccount(account: KeyPair) {
-        val acc = server.accounts().account(account)
+        val acc = server.accounts().account(account.accountId)
         println(
             """
                 thresholds: ${acc.thresholds.lowThreshold} ${acc.thresholds.medThreshold} ${acc.thresholds.highThreshold}
@@ -283,7 +282,7 @@ class StellarWrapperIntegrationTest {
         wrapper.server.submitTransaction(envelope)
 
         // pre authorized transaction; has not been payed yet; cashable by bob
-        wrapper.server.accounts().account(bob).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(30.0)
+        wrapper.server.accounts().account(bob.accountId).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(30.0)
         wrapper.pay(alice, bob, nativeXlmAsset.amount(5))
 
 //        println(wrapper.server.accounts().account(alice).describe())
@@ -292,7 +291,7 @@ class StellarWrapperIntegrationTest {
         bobsTransaction.sign(bob)
         wrapper.server.submitTransaction(bobsTransaction)
 
-        wrapper.server.accounts().account(bob).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(40.0)
+        wrapper.server.accounts().account(bob.accountId).balanceFor(nativeXlmAsset)?.tokenAmount() shouldBe nativeXlmAsset.amount(40.0)
     }
 
     @Test
@@ -302,7 +301,7 @@ class StellarWrapperIntegrationTest {
             val endlessSequence = async {
                 try {
                     wrapper.paymentSequence(pollingIntervalMs = 100, endless = true).forEach {
-                        println("payment ${it.sourceAccount.accountId} received ${it.transactionHash} ${it.type} ${it.amount} ${it.asset.assetCode} from ${it.from.accountId}")
+                        println("payment ${it.sourceAccount} received ${it.transactionHash} ${it.type} ${it.amount} ${it.asset.assetCode} from ${it.from}")
                         paymentCounter++
                     }
                 } catch (e: Exception) {

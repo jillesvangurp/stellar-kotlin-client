@@ -13,7 +13,7 @@ import org.stellar.sdk.xdr.TransactionResult
  */
 fun AccountResponse.describe(): String {
     return """
-accountId: ${keypair.accountId} subEntryCount: $subentryCount home domain: $homeDomain
+accountId: $accountId subEntryCount: $subentryCount home domain: $homeDomain
 
 thresholds: ${thresholds.lowThreshold} ${thresholds.medThreshold} ${thresholds.highThreshold}
 signers:
@@ -73,7 +73,7 @@ fun SubmitTransactionResponse.describe(): String {
 }
 
 fun TradeResponse.describe(): String {
-    return "$ledgerCloseTime ${baseAccount.accountId} sold $baseAmount ${baseAsset.assetCode} for $counterAmount ${counterAsset.assetCode} to ${counterAccount.accountId} at ${price.numerator}/${price.denominator} (${price.numerator.toDouble() / price.denominator.toDouble()})"
+    return "$ledgerCloseTime $baseAccount sold $baseAmount ${baseAsset.assetCode} for $counterAmount ${counterAsset.assetCode} to $counterAccount at ${price.numerator}/${price.denominator} (${price.numerator.toDouble() / price.denominator.toDouble()})"
 }
 
 fun TradeAggregationResponse.describe(baseAssetCode: String, counterAssetCode: String): String {
