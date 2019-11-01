@@ -6,11 +6,9 @@ The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some K
 
 The plan is to keep on adding convenience methods. 
 
-# Future plans
+# Repository move to jillesvangurp
 
-We are currently considering creating a kotlin multi platform project to replace this project. Please refer to this [ticket](https://github.com/Inbot/inbot-stellar-kotlin-wrapper/issues/2) for more details.
-
-Meanwhile, we are using this client ourselves and it is perfectly fine for production usage. We'll likely aim to preserve API compatibility for the replacement where possible/relevant. But of course the point of this would be to improve things as well.
+Inbot the company for which I developed this library originally is no more. So, I forked the repository and put it under my own account. I will likely change the name at some point. Any future releases will be done from here.
 
 # Documentation
 
