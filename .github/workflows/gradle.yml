@@ -15,14 +15,14 @@ jobs:
       uses: actions/cache@v1
       with:
         path: .gradle
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle.kts') }}
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Cache user .gradle dir
       uses: actions/cache@v1
       with:
         path: ~/.gradle
-        key: ${{ runner.os }}-gradleuser-${{ hashFiles('**/build.gradle.kts') }}
+        key: ${{ runner.os }}-gradleuser-${{ hashFiles('**/build.gradle') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: Gradle Build
