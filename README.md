@@ -1,18 +1,17 @@
-[![](https://jitpack.io/v/Inbot/inbot-stellar-kotlin-wrapper.svg)](https://jitpack.io/#Inbot/inbot-stellar-kotlin-wrapper)
+[![](https://jitpack.io/v/jillesvangurp/stellar-kotlin-client.svg)](https://jitpack.io/#jillesvangurp/stellar-kotlin-client)
 
-# Inbot Stellar Kotlin Wrapper
+# Stellar Kotlin Client
 
-The Inbot Stellar Kotlin Wrapper wraps the official Stellar java sdk with some Kotlin specific goodness. The main goal for the library is to get rid of a lot of boilerplate that is needed for using the Java SDK. This is done by leveraging features in Kotlin to add extension methods to the official APIs, introduce DSL style APIs for things like transactions, etc.
-
-The plan is to keep on adding convenience methods. 
+The Stellar Kotlin Cloent adapts the official Stellar java sdk with some Kotlin specific goodness. The main goal for the library is to get rid of the boilerplate that is needed for using the Java SDK. This is done by leveraging features in Kotlin to add extension methods to the official APIs, introduce DSL style APIs for things like transactions, etc.
 
 # Repository move to jillesvangurp
 
-Inbot the company for which I developed this library originally is no more. So, I forked the repository and put it under my own account. I will likely change the name at some point. Any future releases will be done from here.
+Inbot the company for which I developed this library originally is no more. So, I forked the repository and put it under my own account and renamed the project to Stellar Kotlin Client. Any future releases will be done from here. For API compatibility, the kotlin package of `io.inbot.kotlinstellar` is still used. So, you should be able to upgrade simply by using the latest releases.
 
 # Documentation
 
-[Dokka API documentation](docs/inbot-stellar-kotlin-wrapper/index.md)
+[Dokka API documentation](docs/stellar-kotlin-client/index.md)
+
 # Features
 
 - make transaction submission and error handling easier. Our `doTransaction` extension function for the Server class in the sdk does retries on timeout and throws a runtime exceptions if the the result is not successful.
@@ -39,7 +38,7 @@ Note. we will likely move cliste to its own repository after the 1.0 release of 
 
 Create a custom asset with a trust line as per the [walkthrough](https://www.stellar.org/developers/guides/walkthroughs/custom-assets.html).
 
-Note: also look at our integration [tests](https://github.com/Inbot/inbot-stellar-kotlin-wrapper/blob/master/src/test/kotlin/io.inbot.kotlinstellar/StellarWrapperIntegrationTest.kt) for a more in-depth impression of how useful this is.
+Note: also look at our integration [tests](https://github.com/jillesvangurp/stellar-kotlin-client/blob/master/src/test/kotlin/io.inbot.kotlinstellar/StellarWrapperIntegrationTest.kt) for a more in-depth impression of how useful this is.
 
 ```kotlin
 val server = Server("http://localhost:8000")
@@ -76,7 +75,7 @@ logger.info(proofTheIssuerCanIssueNoMore.resultXdr)
 
 # Maven/gradle
 
-You can find release jars on [jitpack](https://jitpack.io/#Inbot/inbot-stellar-kotlin-wrapper). Tagged releases will show up there.
+You can find release jars on [jitpack](https://jitpack.io/#jillesvangurp/stellar-kotlin-client). Tagged releases will show up there.
 
 To build, you need docker and docker-compose installed. The gradle build uses a plugin to spin up the included docker-compose for the standalone network.
 
