@@ -1,0 +1,5 @@
+[stellar-kotlin-client](../../index.md) / [io.inbot.kotlinstellar](../index.md) / [KotlinStellarWrapper](index.md) / [preparePaymentTransaction](./prepare-payment-transaction.md)
+
+# preparePaymentTransaction
+
+`fun preparePaymentTransaction(sender: KeyPair, receiver: KeyPair, amount: `[`TokenAmount`](../-token-amount/index.md)`, asset: Asset = amount.asset ?: nativeXlmAsset, memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, validate: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)` = true, transactionTimeout: `[`Long`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)` = Transaction.Builder.TIMEOUT_INFINITE, baseFee: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 100): PreparedTransaction`

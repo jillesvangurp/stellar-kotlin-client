@@ -1,0 +1,6 @@
+[stellar-kotlin-client](../../index.md) / [io.inbot.kotlinstellar](../index.md) / [KotlinStellarWrapper](index.md) / [placeOffer](./place-offer.md)
+
+# placeOffer
+
+`fun placeOffer(account: KeyPair, sell: `[`TokenAmount`](../-token-amount/index.md)`, forAtLeast: `[`TokenAmount`](../-token-amount/index.md)`, passive: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)` = false, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account), maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries): SubmitTransactionResponse`
+`fun placeOffer(account: KeyPair, selling: Asset, buying: Asset, sellingAmount: `[`TokenAmount`](../-token-amount/index.md)`, price: `[`TokenAmount`](../-token-amount/index.md)`, passive: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)` = false, maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account)): SubmitTransactionResponse`

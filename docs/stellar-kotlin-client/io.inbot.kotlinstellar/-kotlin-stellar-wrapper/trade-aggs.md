@@ -1,0 +1,5 @@
+[stellar-kotlin-client](../../index.md) / [io.inbot.kotlinstellar](../index.md) / [KotlinStellarWrapper](index.md) / [tradeAggs](./trade-aggs.md)
+
+# tradeAggs
+
+`fun tradeAggs(baseAsset: Asset, counterAsset: Asset = nativeXlmAsset, from: `[`Instant`](https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html)`, to: `[`Instant`](https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html)`, resolution: `[`TradeAggregationResolution`](../-trade-aggregation-resolution/index.md)`, cursor: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`? = null, limit: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = 20, descending: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)` = false, offSet: `[`Long`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)` = 0L): `[`Sequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/-sequence/index.html)`<TradeAggregationResponse>`

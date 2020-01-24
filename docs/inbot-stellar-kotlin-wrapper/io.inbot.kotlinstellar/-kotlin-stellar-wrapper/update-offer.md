@@ -1,6 +1,0 @@
-[inbot-stellar-kotlin-wrapper](../../index.md) / [io.inbot.kotlinstellar](../index.md) / [KotlinStellarWrapper](index.md) / [updateOffer](./update-offer.md)
-
-# updateOffer
-
-`fun updateOffer(account: KeyPair, offerResponse: OfferResponse, sell: `[`TokenAmount`](../-token-amount/index.md)`, forAtLeast: `[`TokenAmount`](../-token-amount/index.md)`, maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account)): SubmitTransactionResponse`
-`fun updateOffer(account: KeyPair, offerResponse: OfferResponse, newAmountSelling: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`, newPrice: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`, maxTries: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)` = defaultMaxTries, signers: `[`Array`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html)`<KeyPair> = arrayOf(account)): SubmitTransactionResponse`
