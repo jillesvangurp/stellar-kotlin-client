@@ -19,7 +19,6 @@ buildscript {
 
 apply plugin: 'application'
 apply plugin: 'kotlin'
-//apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'docker-compose'
@@ -111,8 +110,17 @@ dockerCompose {
 
 }
 
-group = 'io.inbot.kotlinstellar'
-version = '1.0-SNAPSHOT'
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = "com.github.jillesvangurp"
+            artifactId = "stellar-kotlin-client"
+            version = "${version}"
+
+            from components.java
+        }
+    }
+}
 
 sourceCompatibility = 1.8
 compileKotlin {
