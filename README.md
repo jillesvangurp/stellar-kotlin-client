@@ -1,5 +1,5 @@
 [![](https://jitpack.io/v/jillesvangurp/stellar-kotlin-client.svg)](https://jitpack.io/#jillesvangurp/stellar-kotlin-client)
-
+[![Actions Status](https://github.com/jillesvangurp/stellar-kotlin-client/workflows/CI-gradle-build/badge.svg)](https://github.com/jillesvangurp/stellar-kotlin-client/actions)
 # Stellar Kotlin Client
 
 The Stellar Kotlin Cloent adapts the official Stellar java sdk with some Kotlin specific goodness. The main goal for the library is to get rid of the boilerplate that is needed for using the Java SDK. This is done by leveraging features in Kotlin to add extension methods to the official APIs, introduce DSL style APIs for things like transactions, etc.
