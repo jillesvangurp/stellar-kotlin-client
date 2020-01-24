@@ -1,12 +1,12 @@
 package io.inbot.kotlinstellar
 
-import org.stellar.sdk.xdr.XdrDataInputStream
-import org.stellar.sdk.xdr.XdrDataOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.Base64
 import kotlin.reflect.KClass
 import kotlin.reflect.full.cast
+import org.stellar.sdk.xdr.XdrDataInputStream
+import org.stellar.sdk.xdr.XdrDataOutputStream
 
 /**
  * Decode an XDR string using the XDR class.
@@ -37,7 +37,7 @@ fun <T : Any> xdrEncode(xdr: T): String {
 
     val callable = xdr::class.members.find { it.name == "encode" }
     if (callable != null) {
-        val result = callable.call(xdrDataOutputStream, xdr)
+        val result = callable.call(xdr, xdrDataOutputStream)
         if (result != null) {
             bos.flush()
             return Base64.getEncoder().encodeToString(bos.toByteArray())

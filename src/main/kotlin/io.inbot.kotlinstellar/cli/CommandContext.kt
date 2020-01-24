@@ -3,6 +3,9 @@ package io.inbot.kotlinstellar.cli
 import com.xenomachina.argparser.SystemExitException
 import io.inbot.kotlinstellar.KotlinStellarWrapper
 import io.inbot.kotlinstellar.StellarNetwork
+import java.io.File
+import java.io.FileOutputStream
+import java.util.Properties
 import org.stellar.sdk.Asset
 import org.stellar.sdk.AssetTypeNative
 import org.stellar.sdk.KeyPair
@@ -10,9 +13,6 @@ import org.stellar.sdk.Network
 import org.stellar.sdk.Server
 import org.stellar.sdk.parseKeyPair
 import org.stellar.sdk.requests.ErrorResponse
-import java.io.File
-import java.io.FileOutputStream
-import java.util.Properties
 
 class CommandContext(val args: CliSteArgs, val commandArgs: Array<String>) : AutoCloseable {
 

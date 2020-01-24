@@ -3,12 +3,12 @@ package io.inbot.kotlinstellar.cli
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.ShowHelpException
 import com.xenomachina.argparser.SystemExitException
-import org.apache.commons.lang3.StringUtils
 import java.io.ByteArrayOutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
+import org.apache.commons.lang3.StringUtils
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T : Any> withArgs(args: Array<String>, block: T.() -> Unit) {

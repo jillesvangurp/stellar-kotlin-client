@@ -1,13 +1,13 @@
 package io.inbot.kotlinstellar
 
 import com.google.common.math.LongMath
+import java.math.BigDecimal
+import java.math.MathContext
+import java.util.Locale
 import org.apache.commons.lang3.StringUtils
 import org.stellar.sdk.Asset
 import org.stellar.sdk.Price
 import org.stellar.sdk.assetCode
-import java.math.BigDecimal
-import java.math.MathContext
-import java.util.Locale
 
 private val stroopsPerToken = LongMath.pow(10, 7)
 private val maxTokens = Long.MAX_VALUE / stroopsPerToken

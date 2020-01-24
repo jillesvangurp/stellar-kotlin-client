@@ -7,6 +7,10 @@ import com.xenomachina.argparser.default
 import io.inbot.kotlinstellar.TokenAmount
 import io.inbot.kotlinstellar.TradeAggregationResolution
 import io.inbot.kotlinstellar.xdrDecodeString
+import java.nio.charset.StandardCharsets
+import java.time.Instant
+import java.util.Base64
+import kotlin.reflect.KClass
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.text.WordUtils
@@ -21,10 +25,6 @@ import org.stellar.sdk.responses.describe
 import org.stellar.sdk.seedString
 import org.stellar.sdk.xdr.OperationType
 import org.stellar.sdk.xdr.TransactionEnvelope
-import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.util.Base64
-import kotlin.reflect.KClass
 
 typealias CommandFunction = (CommandContext) -> Unit
 
@@ -357,7 +357,7 @@ private val doListTrades: CommandFunction = { context ->
 
 class TradeAggsArgs(parser: ArgParser) {
     val fromTime by parser.storing("--from", help = "From time in ms after epoch. Default to now-24h", transform = { toLong() })
-        .default<Long>(System.currentTimeMillis() - 60*60*1000*24)
+        .default<Long>(System.currentTimeMillis() - 60 * 60 * 1000 * 24)
     val toTime by parser.storing("--to", help = "to time in ms after epoch. Default now", transform = { toLong() })
         .default<Long>(System.currentTimeMillis())
     val resolution by parser.storing("-r", "--resolution", help = "resolution. One of ${TradeAggregationResolution.validValues}").default("1_HOURS")
@@ -390,7 +390,12 @@ private val doFeeStats: CommandFunction = { context ->
         println("""
 ${feeStats.lastLedgerBaseFee}   last ledger base fee
 ${feeStats.ledgerCapacityUsage} ledger capacity usage
-${feeStats.min} min
+${feeStats.feeCharged}
+${feeStats.maxFee} max fee
+            """.trimIndent())
+    }
+    /*
+    ${feeStats.min} min
 ${feeStats.p10} p10
 ${feeStats.p20} p20
 ${feeStats.p30} p30
@@ -402,9 +407,7 @@ ${feeStats.p80} p80
 ${feeStats.p90} p90
 ${feeStats.p95} p95
 ${feeStats.p99} p99
-
-            """.trimIndent())
-    }
+     */
 }
 
 @Suppress("unused")

@@ -6,6 +6,7 @@ import io.kotlintest.matchers.string.contain
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
+import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -28,7 +29,6 @@ import org.stellar.sdk.responses.balanceFor
 import org.stellar.sdk.responses.getTransactionResult
 import org.stellar.sdk.responses.tokenAmount
 import org.stellar.sdk.xdr.TransactionEnvelope
-import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger { }
 
